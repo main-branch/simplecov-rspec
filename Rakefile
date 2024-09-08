@@ -32,7 +32,9 @@ CLOBBER << 'Gemfile.lock'
 
 require 'rspec/core/rake_task'
 
-RSpec::Core::RakeTask.new
+RSpec::Core::RakeTask.new do |t|
+  t.pattern = 'spec/**/*{_spec.rb,.feature}'
+end
 
 CLEAN << 'coverage'
 CLEAN << '.rspec_status'
