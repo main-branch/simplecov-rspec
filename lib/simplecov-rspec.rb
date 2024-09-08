@@ -32,16 +32,19 @@ module SimpleCov
   #   Command line environment variables (default: ENV)
   #   @return [Hash]
   #   @api private
+  #   @private
   #
   # @!attribute [r] simplecov_module
   #   The SimpleCov module (default: ::SimpleCov)
   #   @return [Module]
   #   @api private
+  #   @private
   #
   # @!attribute [r] start_config_block
   #   A configuration block to pass to `SimpleCov.start`
   #   @return [Proc]
   #   @api private
+  #   @private
   #
   # @api public
   #
@@ -132,21 +135,33 @@ module SimpleCov
     # rubocop:enable Layout/LineLength
 
     # Environment variable to override coverage_threshold
+    # @api private
+    # @private
     COVERAGE_THRESHOLD = 'COVERAGE_THRESHOLD'
 
     # Environment variable to override fail_on_low_coverage
+    # @api private
+    # @private
     FAIL_ON_LOW_COVERAGE = 'FAIL_ON_LOW_COVERAGE'
 
     # Environment variable to override list_uncovered_lines
+    # @api private
+    # @private
     LIST_UNCOVERED_LINES = 'LIST_UNCOVERED_LINES'
 
     # Default value for coverage_threshold
+    # @api private
+    # @private
     DEFAULT_TEST_COVERAGE_THRESHOLD = 100
 
     # Default value for fail_on_low_coverage
+    # @api private
+    # @private
     DEFAULT_FAIL_ON_LOW_COVERAGEERAGE = true
 
     # Default value for list_uncovered_lines
+    # @api private
+    # @private
     DEFAULT_LIST_UNCOVERED_LINES = false
 
     attr_reader :env, :simplecov_module, :start_config_block
@@ -159,6 +174,7 @@ module SimpleCov
     # @return [Integer]
     #
     # @api private
+    # @private
     #
     def coverage_threshold
       return env.fetch(COVERAGE_THRESHOLD).to_i if env.key?(COVERAGE_THRESHOLD)
@@ -176,6 +192,7 @@ module SimpleCov
     # @return [Boolean]
     #
     # @api private
+    # @private
     #
     def fail_on_low_coverage?
       return false if rspec_dry_run?
@@ -195,6 +212,7 @@ module SimpleCov
     # @return [Boolean]
     #
     # @api private
+    # @private
     #
     def list_uncovered_lines?
       return env_true?(LIST_UNCOVERED_LINES) if env.key?(LIST_UNCOVERED_LINES)
@@ -209,6 +227,7 @@ module SimpleCov
     # @return [Boolean]
     #
     # @api private
+    # @private
     #
     def rspec_dry_run? = @rspec_dry_run
 
@@ -219,6 +238,7 @@ module SimpleCov
     # Create a new SimpleCov::RSpec instance
     # @see SimpleCov::RSpec.start
     # @api private
+    # @private
     def initialize(
       coverage_threshold: nil,
       fail_on_low_coverage: nil,
@@ -242,6 +262,7 @@ module SimpleCov
     # Set the at_exit hook and then configure and start SimpleCov
     # @return [Void]
     # @api private
+    # @private
     def start
       simplecov_module.at_exit(&at_exit_hook)
       simplecov_module.start(&start_config_block)
@@ -250,6 +271,7 @@ module SimpleCov
     # Called by SimpleCov.at_exit
     # @return [Proc]
     # @api private
+    # @private
     def at_exit_hook
       lambda do
         simplecov_module.result.format!
@@ -261,6 +283,7 @@ module SimpleCov
     # Output the at_exit report
     # @return [Void]
     # @api private
+    # @private
     def output_at_exit_report
       low_coverage_report if show_low_coverage_report?
       lines_not_covered_report if show_lines_not_covered_report?
@@ -270,16 +293,19 @@ module SimpleCov
     # Whether to show the low coverage report
     # @return [Boolean]
     # @api private
+    # @private
     def show_low_coverage_report? = coverage_below_threshold?
 
     # Whether the test coverage is below the threshold
     # @return [Boolean]
     # @api private
+    # @private
     def coverage_below_threshold? = simplecov_module.result.covered_percent < coverage_threshold
 
     # Output the low coverage part of the at_exit report
     # @return [Void]
     # @api private
+    # @private
     def low_coverage_report
       $stderr.puts
       $stderr.print 'FAIL: ' if fail_on_low_coverage?
@@ -294,11 +320,13 @@ module SimpleCov
     # Whether to show lines not covered report
     # @return [Boolean]
     # @api private
+    # @private
     def show_lines_not_covered_report? = list_uncovered_lines? && uncovered_lines_found?
 
     # Output the lines not covered part of the at_exit report
     # @return [Void]
     # @api private
+    # @private
     def lines_not_covered_report
       $stderr.puts
       $stderr.puts "The following lines were not covered by tests:\n"
@@ -317,6 +345,7 @@ module SimpleCov
     # @param name [String] the name of the environment variable
     # @return [Boolean]
     # @api private
+    # @private
     #
     def env_true?(name)
       value = env.fetch(name, '').downcase
@@ -324,5 +353,3 @@ module SimpleCov
     end
   end
 end
-
-require_relative 'rspec/version'

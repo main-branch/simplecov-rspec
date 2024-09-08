@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'lib/simplecov/rspec/version'
+require_relative 'lib/simplecov-rspec/version'
 
 Gem::Specification.new do |spec|
   spec.name = 'simplecov-rspec'

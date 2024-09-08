@@ -68,4 +68,4 @@ SimpleCov.start
 
 # Require this project's files last
 #
-require 'simplecov/rspec'
+require 'simplecov-rspec'

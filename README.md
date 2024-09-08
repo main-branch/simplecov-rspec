@@ -56,7 +56,7 @@ gem install simplecov-rspec
 
 To use `simplecov-rspec`, follow these steps:
 
-1. Add `require 'simplecov/rspec'` to your `spec_helper.rb`.
+1. Add `require 'simplecov-rspec'` to your `spec_helper.rb`.
 2. Replace `SimpleCov.start` with `SimpleCov::RSpec.start` in your `spec_helper.rb`,
    ensuring this line appears before requiring your project files.
 
@@ -64,7 +64,7 @@ Here is an example `spec_helper.rb`. Your spec helper may include
 other code in addition to these:
 
 ```ruby
-require 'simplecov/rspec'
+require 'simplecov-rspec'
 
 SimpleCov::RSpec.start
 
@@ -80,7 +80,7 @@ That is it!
 To initialize simplecov-rspec with defaults, add the following to your `spec_helper.rb`:
 
 ```ruby
-require 'simplecov/rspec'
+require 'simplecov-rspec'
 
 SimpleCov::RSpec.start
 ```
