@@ -56,7 +56,13 @@ end
 #
 require 'simplecov'
 require 'simplecov-lcov'
-SimpleCov.formatter = SimpleCov::Formatter::LcovFormatter if ENV.fetch('GITHUB_ACTIONS', 'false') == 'true'
+
+if ENV.fetch('GITHUB_ACTIONS', 'false') == 'true'
+  SimpleCov.formatters = [
+    SimpleCov::Formatter::HTMLFormatter,
+    SimpleCov::Formatter::LcovFormatter
+  ]
+end
 
 SimpleCov.start
 
