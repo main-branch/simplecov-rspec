@@ -35,3 +35,6 @@ Style/AsciiComments:
 
 Style/StderrPuts:
   Enabled: false
+
+Naming/FileName:
+  Exclude: ['lib/simplecov-rspec.rb', 'spec/simplecov-rspec_spec.rb']

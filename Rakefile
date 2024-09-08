@@ -60,7 +60,8 @@ unless RUBY_PLATFORM == 'java'
 
   YARD::Rake::YardocTask.new('yard:build') do |t|
     t.files = %w[lib/**/*.rb examples/**/*]
-    t.stats_options = ['--list-undoc']
+    t.options = %w[--no-private]
+    t.stats_options = %w[--list-undoc]
   end
 
   CLEAN << '.yardoc'
