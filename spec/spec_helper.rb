@@ -55,6 +55,9 @@ end
 # SimpleCov configuration
 #
 require 'simplecov'
+require 'simplecov-lcov'
+SimpleCov.formatter = SimpleCov::Formatter::LcovFormatter if ENV.fetch('GITHUB_ACTIONS', 'false') == 'true'
+
 SimpleCov.start
 
 # Require this project's files last
