@@ -4,6 +4,16 @@ Changes for each release are listed in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/) for its releases.
 
+## v0.2.0 (2024-09-08)
+
+[Full Changelog](https://github.com/main-branch/simplecov-rspec/compare/v0.1.0..v0.2.0)
+
+Changes since v0.1.0:
+
+* 2b544ee Allow the CI build to be manually triggered
+* 50e1b4a Rename lib/simplecov/rspec to lib/simplecov-rspec (and related files)
+* 0884d23 Move CI build using Ruby head to an different workflow
+
 ## v0.1.0 (2024-09-07)
 
 [Full Changelog](https://github.com/main-branch/simplecov-rspec/compare/9fe828c..v0.1.0)
