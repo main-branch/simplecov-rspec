@@ -139,7 +139,7 @@ RSpec.describe SimpleCov::RSpec do
     let(:simplecov_module) { double('SimpleCov') }
 
     it 'should call SimpleCov.start' do
-      subject = described_class.new(simplecov_module: simplecov_module)
+      subject = described_class.new(simplecov_module:)
       expected_hook_proc = subject.send(:at_exit_hook).to_proc
       expect(simplecov_module).to receive(:at_exit) do |&block|
         # Verify that the block passed to #at_exit is equivalent to the expected hook proc
@@ -153,7 +153,7 @@ RSpec.describe SimpleCov::RSpec do
     context 'when a start_config_block is set' do
       it 'should call SimpleCov.start with that block' do
         start_config_block = proc {}
-        subject = described_class.new(simplecov_module: simplecov_module, &start_config_block)
+        subject = described_class.new(simplecov_module:, &start_config_block)
         allow(simplecov_module).to receive(:at_exit)
         expect(simplecov_module).to receive(:start) do |&block|
           expect(block.binding.receiver).to eq(start_config_block.binding.receiver)
