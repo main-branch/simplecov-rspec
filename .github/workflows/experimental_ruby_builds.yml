@@ -6,6 +6,10 @@ on:
 
   workflow_dispatch:
 
+# Experimental platforms / Ruby versions:
+#  - Ubuntu: MRI (head), TruffleRuby (head), JRuby (head)
+#  - Windows: MRI (head), JRuby (head)
+
 jobs:
   build:
     name: Ruby ${{ matrix.ruby }} on ${{ matrix.operating-system }}
@@ -18,6 +22,14 @@ jobs:
         include:
           - ruby: head
             operating-system: ubuntu-latest
+          - ruby: head
+            operating-system: windows-latest
+          - ruby: truffleruby-head
+            operating-system: ubuntu-latest
+          - ruby: jruby-head
+            operating-system: ubuntu-latest
+          - ruby: jruby-head
+            operating-system: windows-latest
 
     steps:
       - name: Checkout
