@@ -91,7 +91,7 @@ This is equivalent to starting with the following options:
 SimpleCov::RSpec.start(
     coverage_threshold: 100,
     fail_on_low_coverage: true,
-    list_lines_not_covered: false
+    list_uncovered_lines: false
 )
 ```
 
