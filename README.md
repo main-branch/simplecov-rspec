@@ -24,7 +24,7 @@ FAIL: RSpec Test coverage fell below 100%
 If configured to list the lines that were not covered by tests, RSpec will additionally output:
 
 ```text
-The following lines were not covered by tests:
+2 lines are not covered by tests:
   ./lib/example_project.rb:74
   ./lib/example_project.rb:75
 ```
