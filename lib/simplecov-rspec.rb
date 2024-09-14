@@ -286,11 +286,11 @@ module SimpleCov
     # @private
     def output_at_exit_report
       low_coverage_report if show_low_coverage_report?
-      lines_not_covered_report if show_lines_not_covered_report?
-      $stderr.puts if show_low_coverage_report? || show_lines_not_covered_report?
+      uncovered_lines_report if show_uncovered_lines_report?
+      $stderr.puts if show_low_coverage_report? || show_uncovered_lines_report?
     end
 
-    # Whether to show the low coverage report
+    # Whether to show the low coverage
     # @return [Boolean]
     # @api private
     # @private
@@ -302,7 +302,7 @@ module SimpleCov
     # @private
     def coverage_below_threshold? = simplecov_module.result.covered_percent < coverage_threshold
 
-    # Output the low coverage part of the at_exit report
+    # Output the low coverage report
     # @return [Void]
     # @api private
     # @private
@@ -317,17 +317,17 @@ module SimpleCov
     # @api private
     def uncovered_lines_found? = simplecov_module.result.files.any? { |source_file| source_file.missed_lines.any? }
 
-    # Whether to show lines not covered report
+    # Whether to show the uncovered lines
     # @return [Boolean]
     # @api private
     # @private
-    def show_lines_not_covered_report? = list_uncovered_lines? && uncovered_lines_found?
+    def show_uncovered_lines_report? = list_uncovered_lines? && uncovered_lines_found?
 
-    # Output the lines not covered part of the at_exit report
+    # Output the uncovered lines
     # @return [Void]
     # @api private
     # @private
-    def lines_not_covered_report
+    def uncovered_lines_report
       $stderr.puts
       $stderr.puts "The following lines were not covered by tests:\n"
       simplecov_module.result.files.each do |source_file| # SimpleCov::SourceFile
