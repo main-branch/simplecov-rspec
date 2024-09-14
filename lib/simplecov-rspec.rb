@@ -323,17 +323,53 @@ module SimpleCov
     # @private
     def show_uncovered_lines_report? = list_uncovered_lines? && uncovered_lines_found?
 
+    # An uncovered line
+    #
+    # @!attribute project_filename [rw]
+    #   The path to the file with uncovered lines relative to the project root
+    #   @return [String]
+    #   @api private
+    #
+    # @!attribute line_number [rw]
+    #   The line number of the uncovered line
+    #   @return [Integer]
+    #   @api private
+    #
+    # @api private
+    UncoveredLine = Struct.new(:project_filename, :line_number)
+
+    # Return the uncovered lines from the SimpleCov result
+    # @return [Array<UncoveredLine>]
+    # @api private
+    def uncovered_lines
+      @uncovered_lines ||=
+        simplecov_module.result.files.flat_map do |source_file|
+          source_file.missed_lines.map do |line|
+            project_filename = File.join('.', source_file.project_filename)
+            UncoveredLine.new(project_filename, line.number)
+          end
+        end
+    end
+
+    # Return the singular or plural form of a word based on the count
+    # @param count [Integer] the count
+    # @param singular [String] the singular form of the phrase
+    # @param plural [String] the plural form of the phrase
+    # @return [String]
+    # @api private
+    def pluralize(count, singular, plural) = count == 1 ? singular : plural
+
     # Output the uncovered lines
     # @return [Void]
     # @api private
     # @private
     def uncovered_lines_report
       $stderr.puts
-      $stderr.puts "The following lines were not covered by tests:\n"
-      simplecov_module.result.files.each do |source_file| # SimpleCov::SourceFile
-        source_file.missed_lines.each do |line| # SimpleCov::SourceFile::Line
-          $stderr.puts "  ./#{source_file.project_filename}:#{line.number}"
-        end
+      count = uncovered_lines.count
+      things = pluralize(uncovered_lines.count, 'line is', 'lines are')
+      $stderr.puts "#{count} #{things} not covered by tests:\n"
+      uncovered_lines.each do |uncovered_line|
+        $stderr.puts "  #{uncovered_line.project_filename}:#{uncovered_line.line_number}"
       end
     end
 
