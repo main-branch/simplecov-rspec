@@ -4,6 +4,23 @@ Changes for each release are listed in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/) for its releases.
 
+## v0.3.0 (2024-09-14)
+
+[Full Changelog](https://github.com/main-branch/simplecov-rspec/compare/v0.2.1..v0.3.0)
+
+Changes since v0.2.1:
+
+* 55c3812 Output the number of lines missing coverage
+* 9356f64 Rename variables from "lines_not_covered" to "uncovered_lines" to be consistent
+* ec637c0 Fix error in README
+* 9d9cb0c Rearrange workflow definitions to have the name first
+* ac8efae Update continuous integration and experimental ruby builds
+* ac1da92 Use v1 tag for the semver_pr_label_check workflow
+* d701393 Auto-correct new Rubocop offenses
+* 0319f68 Update minimal Ruby version to 3.1
+* d6b57d1 Update code climate test coverage reporter version to v9
+* 02553a1 Change simplecov from a development dependency to a runtime dependency
+
 ## v0.2.1 (2024-09-10)
 
 [Full Changelog](https://github.com/main-branch/simplecov-rspec/compare/v0.2.0..v0.2.1)
