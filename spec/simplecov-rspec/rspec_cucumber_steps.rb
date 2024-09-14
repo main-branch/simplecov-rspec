@@ -102,6 +102,10 @@ step 'the following lines are missing coverage:' do |table|
   end
 end
 
+step 'no lines are missing coverage' do
+  @files_with_low_coverage = []
+end
+
 step 'the at_exit_hook is called' do
   capture_command_result do
     @rspec_result_processor.send(:at_exit_hook).call
