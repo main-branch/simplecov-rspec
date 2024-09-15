@@ -10,6 +10,8 @@ on:
   workflow_dispatch:
 
 env:
+  # SimpleCov suggests setting the JRuby --debug flag to ensure that coverage
+  # results from JRuby are complete.
   JRUBY_OPTS: --debug
 
 # Supported platforms / Ruby versions:
