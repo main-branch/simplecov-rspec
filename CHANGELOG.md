@@ -4,6 +4,16 @@ Changes for each release are listed in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/) for its releases.
 
+## v0.3.2 (2024-09-17)
+
+[Full Changelog](https://github.com/main-branch/simplecov-rspec/compare/v0.3.1..v0.3.2)
+
+Changes since v0.3.1:
+
+* 7da8291 Update links in gemspec
+* c050356 Add Slack badge for this project in README
+* b9e3dfb Release v0.3.1
+
 ## v0.3.1 (2024-09-16)
 
 [Full Changelog](https://github.com/main-branch/simplecov-rspec/compare/v0.3.0..v0.3.1)
