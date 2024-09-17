@@ -6,6 +6,7 @@
 [![Build Status](https://github.com/main-branch/simplecov-rspec/actions/workflows/continuous_integration.yml/badge.svg)](https://github.com/main-branch/simplecov-rspec/actions/workflows/continuous_integration.yml)
 [![Maintainability](https://api.codeclimate.com/v1/badges/9a58b51d18910db724c7/maintainability)](https://codeclimate.com/github/main-branch/simplecov-rspec/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/9a58b51d18910db724c7/test_coverage)](https://codeclimate.com/github/main-branch/simplecov-rspec/test_coverage)
+[![Slack](https://img.shields.io/badge/slack-main--branch/simplecov--rspec-yellow.svg?logo=slack)](https://main-branch.slack.com/archives/C07MCM9J72B)
 
 `simplecov-rspec` is a Ruby gem that integrates SimpleCov with RSpec to ensure your
 tests meet a minimum coverage threshold. It enhances your test suite by automatically
