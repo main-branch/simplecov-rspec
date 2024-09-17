@@ -4,6 +4,21 @@ Changes for each release are listed in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/) for its releases.
 
+## v0.3.1 (2024-09-16)
+
+[Full Changelog](https://github.com/main-branch/simplecov-rspec/compare/v0.3.0..v0.3.1)
+
+Changes since v0.3.0:
+
+* 1fca720 Remove unneeded --exclude options in .yardopts
+* e60794d Update yardopts with new standard options
+* 31537ec Fix the YARD doc generation to use the correct license file name
+* aebb048 Standardize YARD and Markdown Lint configurations
+* 474adfb Update CODEOWNERS file
+* ca1aca3 Document why the JRuby --debug flag is being set
+* 8e0ad31 Set JRuby —debug option when running tests in GitHub Actions workflows
+* fa10ba3 Fix example of uncovered lines listing in README
+
 ## v0.3.0 (2024-09-14)
 
 [Full Changelog](https://github.com/main-branch/simplecov-rspec/compare/v0.2.1..v0.3.0)
