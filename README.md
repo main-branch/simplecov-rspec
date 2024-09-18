@@ -41,11 +41,21 @@ If configured to list the lines that were not covered by tests, RSpec will addit
 
 ## Installation
 
-Install the gem and add to the application's Gemfile by executing:
+To install the gem, add to the following line to your application's gemspec OR Gemfile:
 
-```bash
-bundle add simplecov-rspec
+gemspec:
+
+```ruby
+  spec.add_development_dependency "simplecov-rspec", '~> 0.1'
 ```
+
+Gemfile:
+
+```ruby
+gem "simplecov-rspec", "~> 0.1", groups: [:development, :test]
+```
+
+and then run `bundle install`
 
 If bundler is not being used to manage dependencies, install the gem by executing:
 
@@ -119,9 +129,8 @@ for details.
 
 ### Configuration from Environment Variables
 
-Environment variables can be used to set these options as follows:
-
-You can configure `simplecov-rspec` using the following environment variables:
+Environment variables can be used to configure `simplecov-rspec`. These environment
+variables take presidence over the values passed to `SimpleCov::RSpec.start`.
 
 * **`COVERAGE_THRESHOLD`**: Sets the minimum coverage threshold (0-100). Overrides
   `coverage_threshold`.
@@ -145,8 +154,8 @@ uncovered lines on different platforms than the one you run for local developmen
 If you want to contribute or experiment with the gem, follow these steps to set up
 your development environment:
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake
-spec` to run the tests. You can also run `bin/console` for an interactive prompt that
+After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake`
+to run linting, tests, etc. just like the CI build. You can also run `bin/console` for an interactive prompt that
 will allow you to experiment.
 
 To install this gem onto your local machine, run `bundle exec rake install`. To
