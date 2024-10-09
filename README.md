@@ -31,13 +31,15 @@ If configured to list the lines that were not covered by tests, RSpec will addit
 ```
 
 * [Installation](#installation)
-* [Getting Started](#getting-started)
-  * [Basic Setup](#basic-setup)
-  * [Configuration from Environment Variables](#configuration-from-environment-variables)
+* [Getting started](#getting-started)
+  * [Basic setup](#basic-setup)
+  * [Configuration from environment variables](#configuration-from-environment-variables)
 * [Development](#development)
 * [Contributing](#contributing)
+  * [Commit message guidelines](#commit-message-guidelines)
+  * [Pull request guidelines](#pull-request-guidelines)
 * [License](#license)
-* [Code of Conduct](#code-of-conduct)
+* [Code of conduct](#code-of-conduct)
 
 ## Installation
 
@@ -63,7 +65,7 @@ If bundler is not being used to manage dependencies, install the gem by executin
 gem install simplecov-rspec
 ```
 
-## Getting Started
+## Getting started
 
 To use `simplecov-rspec`, follow these steps:
 
@@ -86,7 +88,7 @@ This will configure RSpec to fail when test coverage falls below 100%.
 
 That is it!
 
-### Basic Setup
+### Basic setup
 
 To initialize simplecov-rspec with defaults, add the following to your `spec_helper.rb`:
 
@@ -127,7 +129,7 @@ This block is passed on to `SimpleCov::RSpec.start`. See [Configuring
 SimpleCov](https://github.com/simplecov-ruby/simplecov?tab=readme-ov-file#configuring-simplecov)
 for details.
 
-### Configuration from Environment Variables
+### Configuration from environment variables
 
 Environment variables can be used to configure `simplecov-rspec`. These environment
 variables take presidence over the values passed to `SimpleCov::RSpec.start`.
@@ -172,12 +174,37 @@ welcoming space for collaboration, and contributors are expected to adhere to th
 [code of
 conduct](https://github.com/main-branch/simplecov-rspec/blob/main/CODE_OF_CONDUCT.md).
 
+### Commit message guidelines
+
+All commit messages must follow the [Conventional Commits
+standard](https://www.conventionalcommits.org/en/v1.0.0/). This helps us maintain a
+clear and structured commit history, automate versioning, and generate changelogs
+effectively.
+
+To ensure compliance, this project includes:
+
+* A git commit-msg hook that validates your commit messages before they are accepted.
+
+  To activate the hook, you must have node installed and run `npm install`.
+
+* A GitHub Actions workflow that will enforce the Conventional Commit standard as
+  part of the continuous integration pipeline.
+
+  Any commit message that does not conform to the Conventional Commits standard will
+  cause the workflow to fail and not allow the PR to be merged.
+
+### Pull request guidelines
+
+All pull requests must be merged using rebase merges. This ensures that commit
+messages from the feature branch are preserved in the release branch, keeping the
+history clean and meaningful.
+
 ## License
 
 The gem is available as open source under the terms of the [MIT
 License](https://opensource.org/licenses/MIT).
 
-## Code of Conduct
+## Code of conduct
 
 Everyone interacting in the Simplecov::Rspec project's codebases, issue trackers,
 chat rooms and mailing lists is expected to follow the [code of

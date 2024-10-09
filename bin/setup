@@ -1,8 +1,17 @@
 #!/usr/bin/env bash
+
+# Same setup script for Ruby projects that also installs the conventional commit git hook
+
 set -euo pipefail
 IFS=$'\n\t'
-set -vx
+
+# set -vx
 
 bundle install
 
-# Do any other automated setup that you need to do here
+if [ -x "$(command -v npm)" ]; then
+  npm install
+else
+  echo "npm is not installed"
+  echo "Install npm then re-run this script to enable the conventional commit git hook."
+fi
