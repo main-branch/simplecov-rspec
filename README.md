@@ -6,6 +6,8 @@
 [![Build Status](https://github.com/main-branch/simplecov-rspec/actions/workflows/continuous_integration.yml/badge.svg)](https://github.com/main-branch/simplecov-rspec/actions/workflows/continuous_integration.yml)
 [![Maintainability](https://api.codeclimate.com/v1/badges/9a58b51d18910db724c7/maintainability)](https://codeclimate.com/github/main-branch/simplecov-rspec/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/9a58b51d18910db724c7/test_coverage)](https://codeclimate.com/github/main-branch/simplecov-rspec/test_coverage)
+[![Conventional
+Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-%23FE5196?logo=conventionalcommits&logoColor=white)](https://conventionalcommits.org)
 [![Slack](https://img.shields.io/badge/slack-main--branch/simplecov--rspec-yellow.svg?logo=slack)](https://main-branch.slack.com/archives/C07MCM9J72B)
 
 `simplecov-rspec` is a Ruby gem that integrates SimpleCov with RSpec to ensure your
