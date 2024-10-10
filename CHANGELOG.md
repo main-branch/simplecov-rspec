@@ -4,6 +4,20 @@ Changes for each release are listed in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/) for its releases.
 
+## v0.4.0 (2024-10-10)
+
+[Full Changelog](https://github.com/main-branch/simplecov-rspec/compare/v0.3.2..v0.4.0)
+
+Changes since v0.3.2:
+
+* e06d866 build: update create_github_release dependency
+* b8aafa3 docs: add conventional commit badge to README
+* 596b217 build: remove semver pr label check
+* bed5192 build: enforce conventional commit message formatting
+* d036188 Clarify gem installation and configuration via env variables
+* 1d89785 Add TargetRubyVersion in .rubocop.yml
+* 2017a2f Use shared Rubocop config
+
 ## v0.3.2 (2024-09-17)
 
 [Full Changelog](https://github.com/main-branch/simplecov-rspec/compare/v0.3.1..v0.3.2)
