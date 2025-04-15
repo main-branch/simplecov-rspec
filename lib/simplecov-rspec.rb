@@ -231,6 +231,21 @@ module SimpleCov
     #
     def rspec_dry_run? = @rspec_dry_run
 
+    # An uncovered line
+    #
+    # @!attribute project_filename [rw]
+    #   The path to the file with uncovered lines relative to the project root
+    #   @return [String]
+    #   @api private
+    #
+    # @!attribute line_number [rw]
+    #   The line number of the uncovered line
+    #   @return [Integer]
+    #   @api private
+    #
+    # @api private
+    UncoveredLine = Struct.new(:project_filename, :line_number)
+
     private
 
     # rubocop:disable Metrics/ParameterLists
@@ -322,21 +337,6 @@ module SimpleCov
     # @api private
     # @private
     def show_uncovered_lines_report? = list_uncovered_lines? && uncovered_lines_found?
-
-    # An uncovered line
-    #
-    # @!attribute project_filename [rw]
-    #   The path to the file with uncovered lines relative to the project root
-    #   @return [String]
-    #   @api private
-    #
-    # @!attribute line_number [rw]
-    #   The line number of the uncovered line
-    #   @return [Integer]
-    #   @api private
-    #
-    # @api private
-    UncoveredLine = Struct.new(:project_filename, :line_number)
 
     # Return the uncovered lines from the SimpleCov result
     # @return [Array<UncoveredLine>]

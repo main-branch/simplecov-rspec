@@ -4,8 +4,6 @@
 [![Documentation](https://img.shields.io/badge/Documentation-Latest-green)](https://rubydoc.info/gems/simplecov-rspec/)
 [![Change Log](https://img.shields.io/badge/CHANGELOG-Latest-green)](https://rubydoc.info/gems/simplecov-rspec/file/CHANGELOG.md)
 [![Build Status](https://github.com/main-branch/simplecov-rspec/actions/workflows/continuous_integration.yml/badge.svg)](https://github.com/main-branch/simplecov-rspec/actions/workflows/continuous_integration.yml)
-[![Maintainability](https://api.codeclimate.com/v1/badges/9a58b51d18910db724c7/maintainability)](https://codeclimate.com/github/main-branch/simplecov-rspec/maintainability)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/9a58b51d18910db724c7/test_coverage)](https://codeclimate.com/github/main-branch/simplecov-rspec/test_coverage)
 [![Conventional
 Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-%23FE5196?logo=conventionalcommits&logoColor=white)](https://conventionalcommits.org)
 [![Slack](https://img.shields.io/badge/slack-main--branch/simplecov--rspec-yellow.svg?logo=slack)](https://main-branch.slack.com/archives/C07MCM9J72B)
@@ -34,12 +32,12 @@ If configured to list the lines that were not covered by tests, RSpec will addit
 
 * [Installation](#installation)
 * [Getting started](#getting-started)
-  * [Basic setup](#basic-setup)
-  * [Configuration from environment variables](#configuration-from-environment-variables)
+    * [Basic setup](#basic-setup)
+    * [Configuration from environment variables](#configuration-from-environment-variables)
 * [Development](#development)
 * [Contributing](#contributing)
-  * [Commit message guidelines](#commit-message-guidelines)
-  * [Pull request guidelines](#pull-request-guidelines)
+    * [Commit message guidelines](#commit-message-guidelines)
+    * [Pull request guidelines](#pull-request-guidelines)
 * [License](#license)
 * [Code of conduct](#code-of-conduct)
 
