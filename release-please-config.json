@@ -1,0 +1,22 @@
+{
+  "bootstrap-sha": "1024da0c250fa409d5f5f99d2f1dfd27bd1a1aab",
+  "packages": {
+    ".": {
+      "release-type": "ruby",
+      "package-name": "simplecov-rspec",
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "lib/simplecov-rspec/version.rb",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "draft": false,
+      "prerelease": false,
+      "include-component-in-tag": false
+    }
+  },
+  "plugins": [
+    {
+      "type": "sentence-case"
+    }
+  ],
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
+}
