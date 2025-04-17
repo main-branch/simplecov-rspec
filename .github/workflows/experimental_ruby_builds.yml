@@ -1,19 +1,12 @@
 name: Experimental Ruby Builds
 
 on:
-  push:
-    branches: [main]
-
   workflow_dispatch:
 
 env:
   # SimpleCov suggests setting the JRuby --debug flag to ensure that coverage
   # results from JRuby are complete.
   JRUBY_OPTS: --debug
-
-# Experimental platforms / Ruby versions:
-#  - Ubuntu: MRI (head), TruffleRuby (head), JRuby (head)
-#  - Windows: MRI (head), JRuby (head)
 
 jobs:
   build:
@@ -22,20 +15,40 @@ jobs:
     runs-on: ${{ matrix.operating-system }}
     continue-on-error: true
 
+    env:
+      FAIL_ON_LOW_COVERAGE: ${{ matrix.fail_on_low_coverage }}
+
     strategy:
       fail-fast: false
       matrix:
         include:
+          - ruby: "3.1"
+            operating-system: windows-latest
+            fail_on_low_coverage: "false"
           - ruby: head
             operating-system: ubuntu-latest
+            fail_on_low_coverage: "true"
           - ruby: head
             operating-system: windows-latest
+            fail_on_low_coverage: "false"
+          - ruby: "jruby-9.4"
+            operating-system: ubuntu-latest
+            fail_on_low_coverage: "false"
+          - ruby: "jruby-9.4"
+            operating-system: windows-latest
+            fail_on_low_coverage: "false"
+          - ruby: jruby-head
+            operating-system: ubuntu-latest
+            fail_on_low_coverage: "false"
+          - ruby: jruby-head
+            operating-system: windows-latest
+            fail_on_low_coverage: "false"
+          - ruby: "truffleruby-24"
+            operating-system: ubuntu-latest
+            fail_on_low_coverage: "false"
           - ruby: truffleruby-head
             operating-system: ubuntu-latest
-          - ruby: jruby-head
-            operating-system: ubuntu-latest
-          - ruby: jruby-head
-            operating-system: windows-latest
+            fail_on_low_coverage: "false"
 
     steps:
       - name: Checkout
