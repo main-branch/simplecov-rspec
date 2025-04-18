@@ -1,4 +1,8 @@
+---
 name: Conventional Commits
+
+permissions:
+  contents: read
 
 on:
   pull_request:
@@ -9,6 +13,7 @@ jobs:
   commit-lint:
     name: Verify Conventional Commits
 
+    # Skip this job if this is a release PR
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' && !startsWith(github.event.pull_request.head.ref, 'release-please--'))
