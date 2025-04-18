@@ -4,6 +4,13 @@ Changes for each release are listed in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/) for its releases.
 
+## [0.4.3](https://github.com/main-branch/simplecov-rspec/compare/v0.4.2...v0.4.3) (2025-04-18)
+
+
+### Other Changes
+
+* Configure release-please to includes all changes in the CHANGELOG ([8efc084](https://github.com/main-branch/simplecov-rspec/commit/8efc0843a8c25a1da07ac5f521a3a17808de9be5))
+
 ## [0.4.2](https://github.com/main-branch/simplecov-rspec/compare/v0.4.1...v0.4.2) (2025-04-17)
 
 
