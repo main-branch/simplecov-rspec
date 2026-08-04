@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - ruby: "3.1"
+          - ruby: "3.2"
             operating-system: windows-latest
             fail_on_low_coverage: "false"
           - ruby: head
@@ -31,10 +31,10 @@ jobs:
           - ruby: head
             operating-system: windows-latest
             fail_on_low_coverage: "false"
-          - ruby: "jruby-9.4"
+          - ruby: "jruby-10.0"
             operating-system: ubuntu-latest
             fail_on_low_coverage: "false"
-          - ruby: "jruby-9.4"
+          - ruby: "jruby-10.0"
             operating-system: windows-latest
             fail_on_low_coverage: "false"
           - ruby: jruby-head
