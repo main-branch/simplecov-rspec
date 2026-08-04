@@ -1,5 +1,23 @@
 # frozen_string_literal: true
 
+# A fake SimpleCov::SourceFile, built from Gherkin table rows
+class FakeSourceFile
+  attr_reader :project_filename, :missed_lines, :missed_branches, :missed_methods
+
+  def initialize(project_filename)
+    @project_filename = project_filename
+    @missed_lines = []
+    @missed_branches = []
+    @missed_methods = []
+  end
+end
+
+FakeLine = Struct.new(:number)
+FakeBranch = Struct.new(:report_line, :type)
+FakeMethod = Struct.new(:start_line, :label) do
+  def to_s = label
+end
+
 class SimpleCovResult
   def initialize(context)
     @context = context
@@ -12,10 +30,6 @@ class SimpleCovResult
   def files
     @context.instance_variable_get(:@files_with_low_coverage)
   end
-
-  def covered_percent
-    @context.instance_variable_get(:@code_coverage)
-  end
 end
 
 RSpec.configure do |config|
@@ -26,99 +40,67 @@ RSpec.configure do |config|
   end
 end
 
-def code_covereage = @code_coverage
+def fake_file(name) = (@fake_files ||= {})[name] ||= FakeSourceFile.new(name)
 
-step 'the code coverage is below the threshold' do
-  @code_coverage = 99
-end
-
-step 'the code coverage is equal to the threshold' do
-  @code_coverage = 100
-end
-
-step 'fail_on_low_coverage? is true' do
+def build_processor(**)
   @rspec_result_processor = SimpleCov::RSpec.new(
-    coverage_threshold: 100,
-    fail_on_low_coverage: true,
-    list_uncovered_lines: false,
-    rspec_dry_run: false,
-    env: {},
-    simplecov_module: @simplecov_module
-  )
-  @rspec_result_processor.send(:start)
-end
-
-step 'fail_on_low_coverage? is false' do
-  @rspec_result_processor = SimpleCov::RSpec.new(
-    coverage_threshold: 100,
     fail_on_low_coverage: false,
-    list_uncovered_lines: false,
     rspec_dry_run: false,
     env: {},
-    simplecov_module: @simplecov_module
+    simplecov_module: @simplecov_module,
+    **
   )
-  @rspec_result_processor.send(:start)
 end
 
-step 'list_uncovered_lines? is true' do
-  @rspec_result_processor = SimpleCov::RSpec.new(
-    coverage_threshold: 100,
-    fail_on_low_coverage: false,
-    list_uncovered_lines: true,
-    rspec_dry_run: false,
-    env: {},
-    simplecov_module: @simplecov_module
-  )
-  @rspec_result_processor.send(:start)
+step 'list_uncovered is "line"' do
+  build_processor(list_uncovered: :line)
 end
 
-step 'list_uncovered_lines? is false' do
-  @rspec_result_processor = SimpleCov::RSpec.new(
-    coverage_threshold: 100,
-    fail_on_low_coverage: false,
-    list_uncovered_lines: false,
-    rspec_dry_run: false,
-    env: {},
-    simplecov_module: @simplecov_module
-  )
-  @rspec_result_processor.send(:start)
+step 'list_uncovered is "branch"' do
+  build_processor(list_uncovered: :branch)
+end
+
+step 'list_uncovered is "method"' do
+  build_processor(list_uncovered: :method)
+end
+
+step 'list_uncovered is "all"' do
+  build_processor(list_uncovered: :all)
+end
+
+step 'list_uncovered is false' do
+  build_processor(list_uncovered: false)
+end
+
+step 'list_uncovered is "all" and list_uncovered_detail is false' do
+  build_processor(list_uncovered: :all, list_uncovered_detail: false)
 end
 
 step 'the following lines are missing coverage:' do |table|
-  @files = Hash.new { |hash, key| hash[key] = [] }
-  table.hashes.each do |row|
-    @files[row['File']] << row['Line'].to_i
-  end
+  table.hashes.each { |row| fake_file(row['File']).missed_lines << FakeLine.new(row['Line'].to_i) }
+end
 
-  @files_with_low_coverage = []
-  @files.each_key do |file|
-    @files_with_low_coverage <<
-      Struct.new(:project_filename, :missed_lines).new(
-        file,
-        @files[file].map do |line|
-          Struct.new(:number).new(line)
-        end
-      )
+step 'the following branches are missing coverage:' do |table|
+  table.hashes.each do |row|
+    fake_file(row['File']).missed_branches << FakeBranch.new(row['Line'].to_i, row['Type'])
   end
 end
 
-step 'no lines are missing coverage' do
-  @files_with_low_coverage = []
+step 'the following methods are missing coverage:' do |table|
+  table.hashes.each do |row|
+    fake_file(row['File']).missed_methods << FakeMethod.new(row['Line'].to_i, row['Method'])
+  end
+end
+
+step 'nothing is missing coverage' do
+  @fake_files = {}
 end
 
 step 'the at_exit_hook is called' do
+  @files_with_low_coverage = (@fake_files || {}).values
   capture_command_result do
     @rspec_result_processor.send(:at_exit_hook).call
   end
-end
-
-step 'a SystemExit exception should be raised with a non-zero status code' do
-  expect(@system_exit_exception).not_to be_nil
-  expect(@system_exit_exception.status).not_to eq(0)
-end
-
-step 'a SystemExit exception should not be raised' do
-  expect(@system_exit_exception).to be_nil
 end
 
 step 'stderr output should include:' do |string|

@@ -57,14 +57,17 @@ end
 require 'simplecov'
 require 'simplecov-lcov'
 
-if ENV.fetch('GITHUB_ACTIONS', 'false') == 'true'
-  SimpleCov.formatters = [
-    SimpleCov::Formatter::HTMLFormatter,
-    SimpleCov::Formatter::LcovFormatter
-  ]
-end
+SimpleCov.start do
+  if ENV.fetch('GITHUB_ACTIONS', 'false') == 'true'
+    SimpleCov.formatters = [
+      SimpleCov::Formatter::HTMLFormatter,
+      SimpleCov::Formatter::LcovFormatter
+    ]
+  end
 
-SimpleCov.start
+  enable_coverage(:branch)
+  minimum_coverage(line: 100, branch: 100)
+end
 
 # Require this project's files last
 #

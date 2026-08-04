@@ -8,11 +8,11 @@ Gem::Specification.new do |spec|
   spec.authors = ['James Couball']
   spec.email = ['jcouball@yahoo.com']
 
-  spec.summary = 'Configure SimpleCov to fail RSpec if the test coverage falls below a given threshold'
+  spec.summary = 'Configure SimpleCov coverage thresholds and uncovered item reporting for RSpec'
   spec.description = <<~DESCRIPTION
-    Configures RSpec to fail (and exit with with a non-zero exitcode) if the
-    test coverage is below the configured threshold and (optionally) list the
-    lines of code not covered by tests.
+    Configures SimpleCov's line, branch, and method coverage thresholds for RSpec,
+    suppresses failures during RSpec dry runs, and (optionally) lists or summarizes
+    the lines, branches, and methods not covered by tests.
   DESCRIPTION
   spec.license = 'MIT'
   spec.required_ruby_version = '>= 3.2.0'
@@ -56,6 +56,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'turnip', '~> 4.4'
 
   unless RUBY_PLATFORM == 'java'
+    spec.add_development_dependency 'irb', '~> 1.13' # required by yard, no longer a default gem as of Ruby 4.0
     spec.add_development_dependency 'redcarpet', '~> 3.6'
     spec.add_development_dependency 'yard', '~> 0.9', '>= 0.9.28'
     spec.add_development_dependency 'yardstick', '~> 0.9'
