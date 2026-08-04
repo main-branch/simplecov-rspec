@@ -8,10 +8,14 @@
 Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-%23FE5196?logo=conventionalcommits&logoColor=white)](https://conventionalcommits.org)
 [![Slack](https://img.shields.io/badge/slack-main--branch/simplecov--rspec-yellow.svg?logo=slack)](https://main-branch.slack.com/archives/C07MCM9J72B)
 
-`simplecov-rspec` is a Ruby gem that integrates SimpleCov with RSpec to ensure your
-tests meet a minimum coverage threshold. It enhances your test suite by automatically
-failing tests when coverage falls below a specified threshold and, optionally,
-listing uncovered lines to help you improve coverage.
+`simplecov-rspec` is a Ruby gem that integrates SimpleCov with RSpec. SimpleCov
+(`>= 1.0`) already enforces `minimum_coverage` for line, branch, and method coverage
+and fails the build when a threshold is missed. This gem layers three things on top
+that SimpleCov doesn't do on its own:
+
+1. Suppresses coverage failures when RSpec is run in dry-run mode (e.g. from an IDE).
+2. Lists (or summarizes) the individual uncovered lines, branches, and methods.
+3. Lets all of the above be overridden from the environment, for CI.
 
 When `simplecov-rspec` is used, RSpec will report an error if the percent of test
 coverage falls below a defined threshold:
@@ -19,10 +23,10 @@ coverage falls below a defined threshold:
 ```text
 Coverage report generated for RSpec to /Projects/example_project/coverage. 284 / 286 LOC (99.3%) covered.
 
-FAIL: RSpec Test coverage fell below 100%
+Line coverage (99.3%) is below the expected minimum coverage (100.00%).
 ```
 
-If configured to list the lines that were not covered by tests, RSpec will additionally output:
+If configured to list the items that were not covered by tests, RSpec will additionally output:
 
 ```text
 2 lines are not covered by tests:
@@ -30,16 +34,18 @@ If configured to list the lines that were not covered by tests, RSpec will addit
   ./lib/example_project.rb:75
 ```
 
-* [Installation](#installation)
-* [Getting started](#getting-started)
-    * [Basic setup](#basic-setup)
-    * [Configuration from environment variables](#configuration-from-environment-variables)
-* [Development](#development)
-* [Contributing](#contributing)
-    * [Commit message guidelines](#commit-message-guidelines)
-    * [Pull request guidelines](#pull-request-guidelines)
-* [License](#license)
-* [Code of conduct](#code-of-conduct)
+- [Installation](#installation)
+- [Getting started](#getting-started)
+  - [Basic setup](#basic-setup)
+  - [Listing uncovered items](#listing-uncovered-items)
+  - [Configuration block](#configuration-block)
+  - [Configuration from environment variables](#configuration-from-environment-variables)
+- [Development](#development)
+- [Contributing](#contributing)
+  - [Commit message guidelines](#commit-message-guidelines)
+  - [Pull request guidelines](#pull-request-guidelines)
+- [License](#license)
+- [Code of conduct](#code-of-conduct)
 
 ## Installation
 
@@ -48,13 +54,13 @@ To install the gem, add to the following line to your application's gemspec OR G
 gemspec:
 
 ```ruby
-  spec.add_development_dependency "simplecov-rspec", '~> 0.1'
+  spec.add_development_dependency "simplecov-rspec", '~> 1.0'
 ```
 
 Gemfile:
 
 ```ruby
-gem "simplecov-rspec", "~> 0.1", groups: [:development, :test]
+gem "simplecov-rspec", "~> 1.0", groups: [:development, :test]
 ```
 
 and then run `bundle install`
@@ -102,54 +108,105 @@ This is equivalent to starting with the following options:
 
 ```ruby
 SimpleCov::RSpec.start(
-    coverage_threshold: 100,
+    minimum_coverage: { line: 100 },
     fail_on_low_coverage: true,
-    list_uncovered_lines: false
+    list_uncovered: false,
+    list_uncovered_detail: true
 )
 ```
 
-The test coverage threshold is the minimum percent of lines covered by tests as
-tracked by SimpleCov.
+`minimum_coverage` is the minimum percent of lines (and, optionally, branches and
+methods) covered by tests, enforced by SimpleCov itself.
 
-To initialize SimpleCov with a test coverage threshold less than 100%:
+To require less than 100% line coverage:
 
 ```ruby
-SimpleCov::RSpec.start(coverage_threshold: 90)
+SimpleCov::RSpec.start(minimum_coverage: 90)
 ```
+
+To also require branch (and/or method) coverage, pass a Hash. Any criterion named
+here is automatically enabled via `SimpleCov.enable_coverage`:
+
+```ruby
+SimpleCov::RSpec.start(minimum_coverage: { line: 100, branch: 90 })
+```
+
+### Listing uncovered items
+
+To list the individual lines, branches, and/or methods that are not covered, set
+`list_uncovered`. It accepts `:all`, a single criterion, or an Array of criteria —
+independent of what `minimum_coverage` enforces:
+
+```ruby
+SimpleCov::RSpec.start(minimum_coverage: { line: 100, branch: 90 }, list_uncovered: :all)
+```
+
+```text
+1 line is not covered by tests:
+  ./lib/example_project.rb:74
+
+1 branch is not covered by tests:
+  ./lib/example_project.rb:82 (else branch)
+```
+
+For a quieter CI log, set `list_uncovered_detail: false` to print only the count per
+criterion, along with a hint on how to see the details:
+
+```ruby
+SimpleCov::RSpec.start(list_uncovered: :all, list_uncovered_detail: false)
+```
+
+```text
+2 lines are not covered by tests.
+1 branch is not covered by tests.
+
+Run with LIST_UNCOVERED_DETAIL=true to see the uncovered lines and branches.
+```
+
+### Configuration block
 
 A configuration block can be given to the `start` method to further configure
 SimpleCov:
 
 ```ruby
 # Initialize SimpleCov with a specific formatter
-SimpleCov::RSpec.start { formatter = SimpleCov::Formatter::LcovFormatter }
+SimpleCov::RSpec.start { formatter SimpleCov::Formatter::LcovFormatter }
 ```
 
-This block is passed on to `SimpleCov::RSpec.start`. See [Configuring
-SimpleCov](https://github.com/simplecov-ruby/simplecov?tab=readme-ov-file#configuring-simplecov)
+This block is passed on to `SimpleCov.start`. See [Configuring
+SimpleCov](https://github.com/simplecov-ruby/simplecov?tab=readme-ov-file#configuration)
 for details.
 
 ### Configuration from environment variables
 
 Environment variables can be used to configure `simplecov-rspec`. These environment
-variables take presidence over the values passed to `SimpleCov::RSpec.start`.
+variables take precedence over the values passed to `SimpleCov::RSpec.start`.
 
-* **`COVERAGE_THRESHOLD`**: Sets the minimum coverage threshold (0-100). Overrides
-  `coverage_threshold`.
+* **`COVERAGE_THRESHOLD`**: Sets the minimum line coverage threshold (0-100). Overrides
+  `minimum_coverage[:line]`.
+* **`COVERAGE_THRESHOLD_BRANCH`**: Sets the minimum branch coverage threshold (0-100), and
+  enables branch coverage. Overrides `minimum_coverage[:branch]`.
+* **`COVERAGE_THRESHOLD_METHOD`**: Sets the minimum method coverage threshold (0-100), and
+  enables method coverage. Overrides `minimum_coverage[:method]`.
 * **`FAIL_ON_LOW_COVERAGE`**: Controls whether tests fail if coverage is below the threshold.
   Set to 'true', 'yes', 'on', or '1' (case insensitive) to enable.
-* **`LIST_UNCOVERED_LINES`**: Determines if uncovered lines are listed. Set to 'true',
-  'yes', 'on', or '1' (case insensitive) to enable.
+* **`LIST_UNCOVERED`**: Controls which criteria to list uncovered items for. Set to 'all',
+  'true', 'yes', 'on', or '1' to report every criterion; 'false', 'no', 'off', or '0' to
+  report none; or a comma-separated list, e.g. `line,branch`.
+* **`LIST_UNCOVERED_DETAIL`**: Controls whether uncovered items are listed individually, or
+  just summarized as a count per criterion. Set to 'true', 'yes', 'on', or '1' (case
+  insensitive) to show individual items.
 
 For example, here is a bash script to run tests in an infinite loop while writing
 test output to `fail.txt`:
 
 ```bash
-while true; do COV_NO_FAIL=TRUE rspec >> fail.txt; done
+while true; do FAIL_ON_LOW_COVERAGE=false rspec >> fail.txt; done
 ```
 
-In a CI system, you might want to set `LIST_UNCOVERED_LINES=yes` in order to list
-uncovered lines on different platforms than the one you run for local development.
+In a CI system, you might want to set `LIST_UNCOVERED=all` in order to list uncovered
+lines, branches, and methods on a platform other than the one you use for local
+development.
 
 ## Development
 

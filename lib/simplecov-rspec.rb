@@ -1,55 +1,59 @@
 # frozen_string_literal: true
 
 require 'simplecov'
+require_relative 'simplecov-rspec/list_uncovered_option'
+require_relative 'simplecov-rspec/uncovered_report'
 
 # SimpleCov namespace
 module SimpleCov
-  # Configure SimpleCov to fail RSpec if the test coverage falls below a given threshold
+  # Configure SimpleCov to enforce coverage thresholds for RSpec, on top of what
+  # SimpleCov itself already provides.
   #
-  # Configures RSpec to:
+  # SimpleCov (>= 1.0) can already enforce `minimum_coverage` for line, branch, and
+  # method coverage, and will exit with a non-zero status when a threshold is missed.
+  # This gem layers three things SimpleCov doesn't do on its own:
   #
-  # 1. Fail (and exit with with a non-zero exitcode) if the test
-  #    coverage is below the configured threshold and
-  # 2. (optionally) list the lines of code not covered by tests.
+  # 1. Suppresses coverage failures when RSpec is run in dry-run mode (e.g. from an IDE).
+  # 2. Lists (or summarizes) the individual uncovered lines, branches, and methods.
+  # 3. Lets all of the above be overridden from the environment, for CI.
   #
-  # Simply add the line `SimpleCov::RSpec.start` in place of `SimpleCov::Start` in
+  # Simply add the line `SimpleCov::RSpec.start` in place of `SimpleCov.start` in
   # the project's `spec_helper.rb`. This line must appear before the project is
   # required.
   #
-  # @example Initialize SimpleCov with defaults
+  # @example Initialize SimpleCov with defaults (100% line coverage required)
   #   SimpleCov::RSpec.start
   #
-  # @example Initialize SimpleCov with a test coverage threshold other than 100%
-  #   SimpleCov::RSpec.start(coverage_threshold: 90, fail_on_low_coverage: true, list_uncovered_lines: false)
+  # @example Require 100% line coverage and 90% branch coverage
+  #   SimpleCov::RSpec.start(minimum_coverage: { line: 100, branch: 90 })
   #
-  # @example Pass a configuration block to SimpleCov::RSpec.start
-  #   SimpleCov::RSpec.start { formatter = SimpleCov::Formatter::LcovFormatter }
+  # @example List every uncovered line, branch, and method when coverage is incomplete
+  #   SimpleCov::RSpec.start(minimum_coverage: { line: 100, branch: 90 }, list_uncovered: :all)
   #
-  # @example Bash script to run tests in an infinite loop writing failures to `fail.txt`:
-  #   while true; do FAIL_ON_LOW_COVERAGE=TRUE rspec >> fail.txt; done
+  # @example Report only counts, with a hint on how to see the details
+  #   SimpleCov::RSpec.start(list_uncovered: :all, list_uncovered_detail: false)
   #
-  # @!attribute [r] env
-  #   Command line environment variables (default: ENV)
-  #   @return [Hash]
-  #   @api private
-  #   @private
-  #
-  # @!attribute [r] simplecov_module
-  #   The SimpleCov module (default: ::SimpleCov)
-  #   @return [Module]
-  #   @api private
-  #   @private
-  #
-  # @!attribute [r] start_config_block
-  #   A configuration block to pass to `SimpleCov.start`
-  #   @return [Proc]
-  #   @api private
-  #   @private
+  # @example Pass a configuration block to SimpleCov.start
+  #   SimpleCov::RSpec.start { formatter SimpleCov::Formatter::LcovFormatter }
   #
   # @api public
   #
   class RSpec
-    # rubocop:disable Layout/LineLength
+    # @!attribute [r] env
+    #   The environment variables consulted for overrides
+    #   @return [Hash]
+    #   @api private
+    #
+    # @!attribute [r] simplecov_module
+    #   The SimpleCov module being configured
+    #   @return [Module]
+    #   @api private
+    #
+    # @!attribute [r] start_config_block
+    #   A configuration block passed through to `SimpleCov.start`
+    #   @return [Proc, nil]
+    #   @api private
+    #
 
     # Configure and start SimpleCov for RSpec
     #
@@ -60,128 +64,153 @@ module SimpleCov
     #
     # @api public
     #
-    # @overload start(coverage_threshold: 100, fail_on_low_coverage: true, list_uncovered_lines: false, rspec_dry_run: ::RSpec.configuration.dry_run?, env: ENV, &start_config_block)
+    # @overload start(minimum_coverage: { line: 100 }, fail_on_low_coverage: true, list_uncovered: false, list_uncovered_detail: true, rspec_dry_run: ::RSpec.configuration.dry_run?, env: ENV, &start_config_block) # rubocop:disable Layout/LineLength
     #
-    #   @param coverage_threshold [Integer] the test coverage threshold (default: 100)
+    #   @param minimum_coverage [Integer, Hash] the minimum coverage threshold (default: `{ line: 100 }`)
     #
-    #     Coverage below this threshold will cause the rspec to fail if
-    #     fail_on_low_coverage is true.
+    #     An Integer sets the line coverage threshold. A Hash sets a threshold per
+    #     criterion, e.g. `{ line: 100, branch: 90, method: 100 }`. Passed straight
+    #     through to `SimpleCov.minimum_coverage`; any criterion given here is
+    #     automatically enabled via `SimpleCov.enable_coverage`.
     #
-    #   @param fail_on_low_coverage [Boolean] whether to fail if the coverage is below the threshold (default: true)
+    #   @param fail_on_low_coverage [Boolean] whether to fail if coverage is below the threshold (default: true)
     #
-    #     This setting will be read from the environment variable FAIL_ON_LOW_COVERAGE if
-    #     it is NOT given in the `.start` method. Setting that environment variable
-    #     to 'true', 'yes', 'on', or '1' will cause this setting to be `false`
-    #     (the logic is inverted). Any other value will cause this seetting to
-    #     be `true`.
+    #     When `false` (or when RSpec is in dry-run mode), `SimpleCov.minimum_coverage`
+    #     is never set, so SimpleCov will not fail the build regardless of coverage.
     #
-    #   @param list_uncovered_lines [Boolean] whether to list the lines not covered by tests (default: false)
+    #     Read from the `FAIL_ON_LOW_COVERAGE` environment variable if set: `true`,
+    #     `yes`, `on`, or `1` (case-insensitive) enables it; anything else disables it.
     #
-    #     All lines not covered by tests will be listed if the coverage is below the threshold.
-    #     Probably only makes sense to use if the threshold is 100%.
+    #   @param list_uncovered [false, :all, Symbol, Array<Symbol>] which coverage criteria to
+    #     list uncovered items for (default: false)
     #
-    #     This setting will be read from the environment variable LIST_UNCOVERED_LINES
-    #     if it is NOT given in the `.start` method. Setting that environment variable
-    #     to 'true', 'yes', 'on', or '1' will cause this setting to be `true`. Any
-    #     other value will cause this setting to be `false`.
+    #     `false` reports nothing. `:all` reports line, branch, and method. A Symbol or
+    #     Array of Symbols (`:line`, `:branch`, `:method`) reports just those criteria,
+    #     independent of what `minimum_coverage` enforces.
+    #
+    #     Read from the `LIST_UNCOVERED` environment variable if set: `all`, `true`,
+    #     `yes`, `on`, or `1` means every criterion; `false`, `no`, `off`, or `0` means
+    #     none; otherwise a comma-separated list of criteria, e.g. `line,branch`.
+    #
+    #   @param list_uncovered_detail [Boolean] list individual items, or just a count (default: true)
+    #
+    #     When `false`, only the count of uncovered items per criterion is printed,
+    #     followed by a hint on how to see the details.
+    #
+    #     Read from the `LIST_UNCOVERED_DETAIL` environment variable if set: `true`,
+    #     `yes`, `on`, or `1` (case-insensitive) shows details; anything else summarizes.
     #
     #   @param start_config_block [Proc] a configuration block to pass to `SimpleCov.start` (default: nil)
     #
     #   @param rspec_dry_run [Boolean] whether the rspec run is a dry run
     #
-    #     Typically not set by the user. Used for this gem's unit testing.
-    #
-    #     If RSpec is being run in dry run mode, test coverage under the threshold will not fail the build.
-    #
-    #     The purpose of this is to allow the test coverage to be run in a dry run by an IDE
-    #     so it can report failed tests and coverage without reporting that the entire RSpec
-    #     run has failed.
+    #     Typically not set by the user. If RSpec is being run in dry run mode, test
+    #     coverage under the threshold will not fail the build. This allows test
+    #     coverage to be run in a dry run by an IDE so it can report failed tests and
+    #     coverage without reporting that the entire RSpec run has failed.
     #
     #   @param simplecov_module [Module] the SimpleCov module (default: ::SimpleCov)
     #
     #     Typically not set by the user. Used for this gem's unit testing.
-    #
-    #     Allows the SimpleCov module to be mocked.
     #
     #   @param env [Hash] the environment variables (default: ENV)
     #
     #     Typically not set by the user. Used for this gem's unit testing.
     #
     #   @example Initialize SimpleCov with a test coverage threshold other than 100%
-    #     SimpleCov::RSpec.start(coverage_threshold: 90)
+    #     SimpleCov::RSpec.start(minimum_coverage: 90)
     #
     #   @example Initialize SimpleCov to not fail the test run if the coverage is below the threshold
     #     SimpleCov::RSpec.start(fail_on_low_coverage: false)
     #
     #     # OR use an environment variable to override the default
-    #     ENV['FAIL_ON_LOW_COVERAGE'] = 'true'
-    #     SimpleCov::RSpec.start
+    #     FAIL_ON_LOW_COVERAGE=true rspec
     #
-    #     # OR use an environment variable to override the default from the rspec command line
-    #     FAIL_ON_LOW_COVERAGE=TRUE rspec
-    #
-    #   @example Initialize SimpleCov to list the lines not covered by tests
-    #     SimpleCov::RSpec.start(list_uncovered_lines: true)
+    #   @example Initialize SimpleCov to list the lines, branches, and methods not covered by tests
+    #     SimpleCov::RSpec.start(list_uncovered: :all)
     #
     #     # OR use an environment variable to override the default
-    #     ENV['LIST_UNCOVERED_LINES'] = 'true'
-    #     SimpleCov::RSpec.start
-    #
-    #     # OR use an environment variable to override the default from the rspec command line
-    #     LIST_UNCOVERED_LINES=TRUE rspec
+    #     LIST_UNCOVERED=all rspec
     #
     def self.start(...) = new(...).send(:start)
 
-    # rubocop:enable Layout/LineLength
-
-    # Environment variable to override coverage_threshold
+    # Environment variable to override minimum_coverage[:line]
     # @api private
     # @private
     COVERAGE_THRESHOLD = 'COVERAGE_THRESHOLD'
+
+    # Environment variable to override minimum_coverage[:branch]
+    # @api private
+    # @private
+    COVERAGE_THRESHOLD_BRANCH = 'COVERAGE_THRESHOLD_BRANCH'
+
+    # Environment variable to override minimum_coverage[:method]
+    # @api private
+    # @private
+    COVERAGE_THRESHOLD_METHOD = 'COVERAGE_THRESHOLD_METHOD'
 
     # Environment variable to override fail_on_low_coverage
     # @api private
     # @private
     FAIL_ON_LOW_COVERAGE = 'FAIL_ON_LOW_COVERAGE'
 
-    # Environment variable to override list_uncovered_lines
+    # Environment variable to override list_uncovered
     # @api private
     # @private
-    LIST_UNCOVERED_LINES = 'LIST_UNCOVERED_LINES'
+    LIST_UNCOVERED = 'LIST_UNCOVERED'
 
-    # Default value for coverage_threshold
+    # Environment variable to override list_uncovered_detail
     # @api private
     # @private
-    DEFAULT_TEST_COVERAGE_THRESHOLD = 100
+    LIST_UNCOVERED_DETAIL = 'LIST_UNCOVERED_DETAIL'
+
+    # Maps a coverage criterion to the environment variable that overrides its threshold
+    # @api private
+    # @private
+    CRITERION_ENV_VARS = {
+      line: COVERAGE_THRESHOLD,
+      branch: COVERAGE_THRESHOLD_BRANCH,
+      method: COVERAGE_THRESHOLD_METHOD
+    }.freeze
+
+    # Default value for minimum_coverage
+    # @api private
+    # @private
+    DEFAULT_MINIMUM_COVERAGE = { line: 100 }.freeze
 
     # Default value for fail_on_low_coverage
     # @api private
     # @private
-    DEFAULT_FAIL_ON_LOW_COVERAGEERAGE = true
+    DEFAULT_FAIL_ON_LOW_COVERAGE = true
 
-    # Default value for list_uncovered_lines
+    # Default value for list_uncovered_detail
     # @api private
     # @private
-    DEFAULT_LIST_UNCOVERED_LINES = false
+    DEFAULT_LIST_UNCOVERED_DETAIL = true
+
+    # Environment variable values that mean "true"
+    # @api private
+    # @private
+    TRUTHY_ENV_VALUES = %w[yes on true 1].freeze
 
     attr_reader :env, :simplecov_module, :start_config_block
 
-    # The coverage threshold
+    # The minimum coverage threshold, per criterion
     #
-    # Searches the ENV, the value given in the `.start` method, and the default value
-    # and returns the first value found.
+    # Searches the ENV, the value given in the `.start` method, and the default value,
+    # merging them (ENV takes precedence per-criterion).
     #
-    # @return [Integer]
+    # @return [Hash{Symbol => Integer}]
     #
     # @api private
     # @private
     #
-    def coverage_threshold
-      return env.fetch(COVERAGE_THRESHOLD).to_i if env.key?(COVERAGE_THRESHOLD)
+    def minimum_coverage
+      base = @minimum_coverage
+      base = { line: base } if base.is_a?(Integer)
+      validate_minimum_coverage!(base)
 
-      return @coverage_threshold.to_i unless @coverage_threshold.nil?
-
-      DEFAULT_TEST_COVERAGE_THRESHOLD
+      (base || DEFAULT_MINIMUM_COVERAGE).merge(env_minimum_coverage_overrides)
     end
 
     # Whether to fail if the coverage is below the threshold
@@ -196,30 +225,38 @@ module SimpleCov
     #
     def fail_on_low_coverage?
       return false if rspec_dry_run?
-
       return env_true?(FAIL_ON_LOW_COVERAGE) if env.key?(FAIL_ON_LOW_COVERAGE)
-
       return @fail_on_low_coverage unless @fail_on_low_coverage.nil?
 
-      DEFAULT_FAIL_ON_LOW_COVERAGEERAGE
+      DEFAULT_FAIL_ON_LOW_COVERAGE
     end
 
-    # Whether to list the lines not covered by tests
+    # The coverage criteria to list uncovered items for
     #
-    # Searches the ENV, the value given in the `.start` method, and the default value
-    # and returns the first value found.
+    # Searches the ENV and the value given in the `.start` method, and normalizes
+    # the result to an Array of Symbols in a fixed (line, branch, method) order.
+    #
+    # @return [Array<Symbol>]
+    #
+    # @api private
+    # @private
+    #
+    def list_uncovered_criteria
+      @list_uncovered_criteria ||= ListUncoveredOption.resolve(@list_uncovered, env: env, env_var: LIST_UNCOVERED)
+    end
+
+    # Whether to list individual uncovered items, or just a count per criterion
     #
     # @return [Boolean]
     #
     # @api private
     # @private
     #
-    def list_uncovered_lines?
-      return env_true?(LIST_UNCOVERED_LINES) if env.key?(LIST_UNCOVERED_LINES)
+    def list_uncovered_detail?
+      return env_true?(LIST_UNCOVERED_DETAIL) if env.key?(LIST_UNCOVERED_DETAIL)
+      return @list_uncovered_detail unless @list_uncovered_detail.nil?
 
-      return @list_uncovered_lines unless @list_uncovered_lines.nil?
-
-      DEFAULT_LIST_UNCOVERED_LINES
+      DEFAULT_LIST_UNCOVERED_DETAIL
     end
 
     # Whether the rspec run is a dry run
@@ -231,21 +268,6 @@ module SimpleCov
     #
     def rspec_dry_run? = @rspec_dry_run
 
-    # An uncovered line
-    #
-    # @!attribute project_filename [rw]
-    #   The path to the file with uncovered lines relative to the project root
-    #   @return [String]
-    #   @api private
-    #
-    # @!attribute line_number [rw]
-    #   The line number of the uncovered line
-    #   @return [Integer]
-    #   @api private
-    #
-    # @api private
-    UncoveredLine = Struct.new(:project_filename, :line_number)
-
     private
 
     # rubocop:disable Metrics/ParameterLists
@@ -255,17 +277,19 @@ module SimpleCov
     # @api private
     # @private
     def initialize(
-      coverage_threshold: nil,
+      minimum_coverage: nil,
       fail_on_low_coverage: nil,
-      list_uncovered_lines: nil,
+      list_uncovered: nil,
+      list_uncovered_detail: nil,
       rspec_dry_run: ::RSpec.configuration.dry_run?,
       env: ENV,
       simplecov_module: ::SimpleCov,
       &start_config_block
     )
-      @coverage_threshold = coverage_threshold
+      @minimum_coverage = minimum_coverage
       @fail_on_low_coverage = fail_on_low_coverage
-      @list_uncovered_lines = list_uncovered_lines
+      @list_uncovered = list_uncovered
+      @list_uncovered_detail = list_uncovered_detail
       @start_config_block = start_config_block
       @rspec_dry_run = rspec_dry_run
       @env = env
@@ -274,14 +298,28 @@ module SimpleCov
 
     # rubocop:enable Metrics/ParameterLists
 
-    # Set the at_exit hook and then configure and start SimpleCov
+    # Configure SimpleCov and start it
     # @return [Void]
     # @api private
     # @private
     def start
       simplecov_module.at_exit(&at_exit_hook)
+      simplecov_module.enable_coverage(*criteria_to_enable) if criteria_to_enable.any?
+      simplecov_module.minimum_coverage(minimum_coverage) if enforce_minimum_coverage?
       simplecov_module.start(&start_config_block)
     end
+
+    # Whether SimpleCov should be configured to enforce minimum_coverage itself
+    # @return [Boolean]
+    # @api private
+    # @private
+    def enforce_minimum_coverage? = !rspec_dry_run? && fail_on_low_coverage?
+
+    # The coverage criteria that need to be enabled via SimpleCov.enable_coverage
+    # @return [Array<Symbol>]
+    # @api private
+    # @private
+    def criteria_to_enable = (minimum_coverage.keys + list_uncovered_criteria).uniq
 
     # Called by SimpleCov.at_exit
     # @return [Proc]
@@ -290,102 +328,87 @@ module SimpleCov
     def at_exit_hook
       lambda do
         simplecov_module.result.format!
-        output_at_exit_report
-        exit 1 if coverage_below_threshold? && fail_on_low_coverage?
+        output_uncovered_report
       end
     end
 
-    # Output the at_exit report
+    # Output the uncovered items report (detailed or summary), if requested
     # @return [Void]
     # @api private
     # @private
-    def output_at_exit_report
-      low_coverage_report if show_low_coverage_report?
-      uncovered_lines_report if show_uncovered_lines_report?
-      $stderr.puts if show_low_coverage_report? || show_uncovered_lines_report?
-    end
+    def output_uncovered_report
+      return if list_uncovered_criteria.empty?
 
-    # Whether to show the low coverage
-    # @return [Boolean]
-    # @api private
-    # @private
-    def show_low_coverage_report? = coverage_below_threshold?
+      report = UncoveredReport.new(
+        result: simplecov_module.result,
+        criteria: list_uncovered_criteria,
+        detail: list_uncovered_detail?,
+        detail_env_var: LIST_UNCOVERED_DETAIL
+      ).to_s
+      return if report.empty?
 
-    # Whether the test coverage is below the threshold
-    # @return [Boolean]
-    # @api private
-    # @private
-    def coverage_below_threshold? = simplecov_module.result.covered_percent < coverage_threshold
-
-    # Output the low coverage report
-    # @return [Void]
-    # @api private
-    # @private
-    def low_coverage_report
       $stderr.puts
-      $stderr.print 'FAIL: ' if fail_on_low_coverage?
-      $stderr.puts "Test coverage is below the low coverage threshold of #{coverage_threshold}%"
+      $stderr.puts report
     end
 
-    # Whether there are uncovered lines
-    # @return [Boolean]
-    # @api private
-    def uncovered_lines_found? = simplecov_module.result.files.any? { |source_file| source_file.missed_lines.any? }
-
-    # Whether to show the uncovered lines
-    # @return [Boolean]
-    # @api private
-    # @private
-    def show_uncovered_lines_report? = list_uncovered_lines? && uncovered_lines_found?
-
-    # Return the uncovered lines from the SimpleCov result
-    # @return [Array<UncoveredLine>]
-    # @api private
-    def uncovered_lines
-      @uncovered_lines ||=
-        simplecov_module.result.files.flat_map do |source_file|
-          source_file.missed_lines.map do |line|
-            project_filename = File.join('.', source_file.project_filename)
-            UncoveredLine.new(project_filename, line.number)
-          end
-        end
-    end
-
-    # Return the singular or plural form of a word based on the count
-    # @param count [Integer] the count
-    # @param singular [String] the singular form of the phrase
-    # @param plural [String] the plural form of the phrase
-    # @return [String]
-    # @api private
-    def pluralize(count, singular, plural) = count == 1 ? singular : plural
-
-    # Output the uncovered lines
+    # Raise unless `base` is a valid `minimum_coverage` value
+    #
+    # Valid values include `nil`, or a Hash keyed by `:line`, `:branch`, and/or
+    # `:method`, with Numeric values
+    #
+    # @param base [nil, Hash] the normalized `minimum_coverage` value
     # @return [Void]
+    # @raise [ArgumentError] if `base` is not nil or a Hash, has an unknown key, or has a
+    #   non-Numeric value
     # @api private
     # @private
-    def uncovered_lines_report
-      $stderr.puts
-      count = uncovered_lines.count
-      things = pluralize(uncovered_lines.count, 'line is', 'lines are')
-      $stderr.puts "#{count} #{things} not covered by tests:\n"
-      uncovered_lines.each do |uncovered_line|
-        $stderr.puts "  #{uncovered_line.project_filename}:#{uncovered_line.line_number}"
+    def validate_minimum_coverage!(base)
+      unless base.nil? || base.is_a?(Hash)
+        raise ArgumentError, "minimum_coverage must be nil, an Integer, or a Hash; got #{base.inspect}"
+      end
+
+      base&.each_pair { |criterion, threshold| validate_minimum_coverage_entry!(criterion, threshold) }
+    end
+
+    # Raise unless `criterion` is a known criterion with a Numeric `threshold`
+    # @param criterion [Object] the candidate `minimum_coverage` key
+    # @param threshold [Object] the candidate `minimum_coverage` value
+    # @return [Void]
+    # @raise [ArgumentError] if `criterion` is unknown, or `threshold` is not Numeric
+    # @api private
+    # @private
+    def validate_minimum_coverage_entry!(criterion, threshold)
+      unless CRITERION_ENV_VARS.key?(criterion)
+        raise ArgumentError,
+              "minimum_coverage keys must be #{CRITERION_ENV_VARS.keys.inspect}; got #{criterion.inspect}"
+      end
+
+      return if threshold.is_a?(Numeric)
+
+      raise ArgumentError,
+            "minimum_coverage[#{criterion.inspect}] must be a Numeric; got #{threshold.inspect}"
+    end
+
+    # The per-criterion COVERAGE_THRESHOLD* ENV overrides, as a minimum_coverage Hash
+    # @return [Hash{Symbol => Integer}]
+    # @api private
+    # @private
+    def env_minimum_coverage_overrides
+      CRITERION_ENV_VARS.each_with_object({}) do |(criterion, var), overrides|
+        overrides[criterion] = env.fetch(var).to_i if env.key?(var)
       end
     end
 
     # Return `true` if the environment variable is set to a truthy value
     #
     # @example
-    #   env_true?('LIST_UNCOVERED_LINES')
+    #   env_true?('LIST_UNCOVERED_DETAIL')
     #
     # @param name [String] the name of the environment variable
     # @return [Boolean]
     # @api private
     # @private
     #
-    def env_true?(name)
-      value = env.fetch(name, '').downcase
-      %w[yes on true 1].include?(value)
-    end
+    def env_true?(name) = TRUTHY_ENV_VALUES.include?(env.fetch(name, '').downcase)
   end
 end
