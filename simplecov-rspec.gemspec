@@ -15,7 +15,7 @@ Gem::Specification.new do |spec|
     lines of code not covered by tests.
   DESCRIPTION
   spec.license = 'MIT'
-  spec.required_ruby_version = '>= 3.1.0'
+  spec.required_ruby_version = '>= 3.2.0'
 
   spec.metadata['allowed_push_host'] = 'https://rubygems.org'
 
@@ -40,18 +40,18 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
   spec.requirements = [
     'Platform: Mac, Linux, or Windows',
-    'Ruby: MRI 3.1 or later, TruffleRuby 24 or later, or JRuby 9.4 or later'
+    'Ruby: MRI 3.2 or later, TruffleRuby 24 or later, or JRuby 10 or later'
   ]
 
-  spec.add_dependency 'simplecov', '~> 0.22'
+  spec.add_dependency 'simplecov', '~> 1.0'
 
   spec.add_development_dependency 'bundler-audit', '~> 0.9'
   spec.add_development_dependency 'create_github_release', '~> 2.1'
   spec.add_development_dependency 'fuubar', '~> 2.5'
   spec.add_development_dependency 'main_branch_shared_rubocop_config', '~> 0.1'
-  spec.add_development_dependency 'rake', '~> 13.2'
+  spec.add_development_dependency 'rake', '~> 13.4'
   spec.add_development_dependency 'rspec', '~> 3.13'
-  spec.add_development_dependency 'rubocop', '~> 1.66'
+  spec.add_development_dependency 'rubocop', '~> 1.89'
   spec.add_development_dependency 'simplecov-lcov', '~> 0.8'
   spec.add_development_dependency 'turnip', '~> 4.4'
 
