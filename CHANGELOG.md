@@ -4,6 +4,19 @@ Changes for each release are listed in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/) for its releases.
 
+## [1.0.0](https://github.com/main-branch/simplecov-rspec/compare/v0.4.4...v1.0.0) (2026-08-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* `coverage_threshold:` and `list_uncovered_lines:` are removed in favor of `minimum_coverage:` and `list_uncovered:`; the `LIST_UNCOVERED_LINES` env var is removed in favor of `LIST_UNCOVERED`; and `COVERAGE_THRESHOLD` now sets only the line-coverage threshold instead of an overall coverage percentage. Update calls to `SimpleCov::RSpec.start` and any CI environment variables accordingly.
+* drops support for Ruby 3.1 and JRuby 9.4; the minimum is now Ruby 3.2 (or JRuby 10, which reports RUBY_VERSION 3.4).
+
+### Features
+
+* Rely on SimpleCov's own minimum_coverage instead of reimplementing it ([d2fed78](https://github.com/main-branch/simplecov-rspec/commit/d2fed78ff5e5cb2bbf18bc89cb3b301455de0bce))
+* Require Ruby &gt;= 3.2, matching SimpleCov 1.0's own floor ([9452587](https://github.com/main-branch/simplecov-rspec/commit/9452587137e1b698019d4214981f82ed796b9c1d))
+
 ## [0.4.4](https://github.com/main-branch/simplecov-rspec/compare/v0.4.3...v0.4.4) (2026-04-24)
 
 
