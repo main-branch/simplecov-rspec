@@ -4,6 +4,14 @@ Changes for each release are listed in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/) for its releases.
 
+## [1.1.0](https://github.com/main-branch/simplecov-rspec/compare/v1.0.0...v1.1.0) (2026-08-06)
+
+
+### Features
+
+* Add :described to scope the listing to the code under test ([71fe0c7](https://github.com/main-branch/simplecov-rspec/commit/71fe0c715063582ff207a6ac15e9a2c6dbe26243))
+* Add list_uncovered_files to scope the uncovered listing ([1981e65](https://github.com/main-branch/simplecov-rspec/commit/1981e6528a418340c4e211ff0b34ed745693151a))
+
 ## [1.0.0](https://github.com/main-branch/simplecov-rspec/compare/v0.4.4...v1.0.0) (2026-08-05)
 
 
