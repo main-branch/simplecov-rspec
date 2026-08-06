@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'simplecov'
+require_relative 'simplecov-rspec/described_source_files'
 require_relative 'simplecov-rspec/list_uncovered_files_option'
 require_relative 'simplecov-rspec/list_uncovered_option'
 require_relative 'simplecov-rspec/uncovered_report'
@@ -12,11 +13,12 @@ module SimpleCov
   #
   # SimpleCov (>= 1.0) can already enforce `minimum_coverage` for line, branch, and
   # method coverage, and will exit with a non-zero status when a threshold is missed.
-  # This gem layers three things SimpleCov doesn't do on its own:
+  # This gem layers four things SimpleCov doesn't do on its own:
   #
   # 1. Suppresses coverage failures when RSpec is run in dry-run mode (e.g. from an IDE).
   # 2. Lists (or summarizes) the individual uncovered lines, branches, and methods.
-  # 3. Lets all of the above be overridden from the environment, for CI.
+  # 3. Scopes that listing to the files you name, or to the code the run described.
+  # 4. Lets all of the above be overridden from the environment, for CI.
   #
   # Simply add the line `SimpleCov::RSpec.start` in place of `SimpleCov.start` in
   # the project's `spec_helper.rb`. This line must appear before the project is
@@ -33,6 +35,9 @@ module SimpleCov
   #
   # @example Report only counts, with a hint on how to see the details
   #   SimpleCov::RSpec.start(list_uncovered: :all, list_uncovered_detail: false)
+  #
+  # @example Scope the listing to the code the run described
+  #   SimpleCov::RSpec.start(list_uncovered: :all, list_uncovered_files: :described)
   #
   # @example Pass a configuration block to SimpleCov.start
   #   SimpleCov::RSpec.start { formatter SimpleCov::Formatter::LcovFormatter }
@@ -101,14 +106,15 @@ module SimpleCov
     #     Read from the `LIST_UNCOVERED_DETAIL` environment variable if set: `true`,
     #     `yes`, `on`, or `1` (case-insensitive) shows details; anything else summarizes.
     #
-    #   @param list_uncovered_files [nil, String, Array<String>, #call] which files to list
-    #     uncovered items for (default: nil)
+    #   @param list_uncovered_files [nil, Symbol, String, Array<String>, #call] which files to
+    #     list uncovered items for (default: nil)
     #
     #     `nil` reports on every file in the result. A String or Array of Strings names
     #     the files to report on, as `Dir.glob` patterns resolved against `SimpleCov.root`.
-    #     A callable returning either is resolved after the run rather than at `start`,
-    #     which is what a caller scoping the report to the code under test needs: `start`
-    #     runs before any example is defined.
+    #     `:described` reports on the files defining the classes the run described, which
+    #     is the scope a focused run usually wants. A callable returning a String or an
+    #     Array of Strings is resolved after the run rather than at `start`, which is what
+    #     any scope derived from the run needs: `start` runs before any example is defined.
     #
     #     This narrows only the uncovered listing. Coverage is still measured, enforced,
     #     and formatted for the whole project, so the percentage and the HTML report mean
@@ -118,8 +124,8 @@ module SimpleCov
     #     explicitly when they are fully covered or when nothing matched.
     #
     #     Read from the `LIST_UNCOVERED_FILES` environment variable if set: a
-    #     comma-separated list of patterns, or `all` (or `false`, `no`, `off`, `0`, or
-    #     empty) for every file.
+    #     comma-separated list of patterns, `described`, or `all` (or `false`, `no`,
+    #     `off`, `0`, or empty) for every file.
     #
     #   @param start_config_block [Proc] a configuration block to pass to `SimpleCov.start` (default: nil)
     #
@@ -160,9 +166,37 @@ module SimpleCov
     #     LIST_UNCOVERED_FILES=lib/example_project/parser.rb rspec
     #
     #   @example Scope the listing to the classes the run actually described
-    #     SimpleCov::RSpec.start(list_uncovered: :all, list_uncovered_files: -> { described_source_files })
+    #     SimpleCov::RSpec.start(list_uncovered: :all, list_uncovered_files: :described)
+    #
+    #     # OR use an environment variable to override the default
+    #     LIST_UNCOVERED_FILES=described rspec
     #
     def self.start(...) = new(...).send(:start)
+
+    # The source files defining the classes this RSpec run described
+    #
+    # What `list_uncovered_files: :described` scopes to. Call it directly to build a
+    # scope of your own — to add files the run touches but does not describe, say:
+    #
+    #     list_uncovered_files: -> { SimpleCov::RSpec.described_source_files + ['lib/support.rb'] }
+    #
+    # Only meaningful once the run has defined its examples, which is why it is passed
+    # as a callable rather than called at `start`.
+    #
+    # A described class contributes nothing when it is anonymous, defined in C, or no
+    # longer reachable by name, since there is no source file to report on.
+    #
+    # @example Scope the listing to the code under test, plus one more file
+    #   SimpleCov::RSpec.start(
+    #     list_uncovered: :all,
+    #     list_uncovered_files: -> { SimpleCov::RSpec.described_source_files + ['lib/support.rb'] }
+    #   )
+    #
+    # @return [Array<String>] absolute paths, without duplicates
+    #
+    # @api public
+    #
+    def self.described_source_files = DescribedSourceFiles.call
 
     # Environment variable to override minimum_coverage[:line]
     # @api private

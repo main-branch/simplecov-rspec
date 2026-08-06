@@ -12,7 +12,8 @@ Gem::Specification.new do |spec|
   spec.description = <<~DESCRIPTION
     Configures SimpleCov's line, branch, and method coverage thresholds for RSpec,
     suppresses failures during RSpec dry runs, and (optionally) lists or summarizes
-    the lines, branches, and methods not covered by tests.
+    the lines, branches, and methods not covered by tests, either for the whole
+    project or scoped to the code the run described.
   DESCRIPTION
   spec.license = 'MIT'
   spec.required_ruby_version = '>= 3.2.0'
