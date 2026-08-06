@@ -15,7 +15,7 @@ that SimpleCov doesn't do on its own:
 
 1. Suppresses coverage failures when RSpec is run in dry-run mode (e.g. from an IDE).
 2. Lists (or summarizes) the individual uncovered lines, branches, and methods.
-3. Scopes that listing to the files you name.
+3. Scopes that listing to the files you name, or to the code the run described.
 4. Lets all of the above be overridden from the environment, for CI.
 
 When `simplecov-rspec` is used, RSpec will report an error if the percent of test
@@ -70,6 +70,7 @@ Scoped branch coverage: 11 / 12 (91.66%)
   - [Basic setup](#basic-setup)
   - [Listing uncovered items](#listing-uncovered-items)
   - [Scoping the listing to specific files](#scoping-the-listing-to-specific-files)
+  - [Scoping to the code under test](#scoping-to-the-code-under-test)
   - [Configuration block](#configuration-block)
   - [Configuration from environment variables](#configuration-from-environment-variables)
 - [Development](#development)
@@ -280,6 +281,44 @@ this run, or may be excluded by a SimpleCov filter.
 No files were requested, so no coverage was reported.
 ```
 
+### Scoping to the code under test
+
+Naming the files by hand is the awkward part of a focused run: the file you want is
+whatever you happen to be testing right now. `:described` resolves to the source files
+defining the classes the run described, so it follows you from run to run:
+
+```ruby
+SimpleCov::RSpec.start(list_uncovered: :all, list_uncovered_files: :described)
+```
+
+```bash
+# Report on lib/example_project/parser.rb, because that is what these specs describe
+bundle exec rspec spec/example_project/parser_spec.rb
+```
+
+It walks nested groups too, so a `describe` of one class inside another contributes
+both. A group describing something that is not a class contributes nothing, as does one
+whose class is anonymous, defined in C, or no longer reachable by name — there is no
+source file to report on in those cases.
+
+The scope is the classes the run *described*, not the ones it exercised. A class that a
+described class delegates to is not included, and a group written as `describe 'the
+parser' do` names no class at all. Where that matters, build the scope yourself:
+`SimpleCov::RSpec.described_source_files` is public, and you can add to what it returns.
+
+```ruby
+SimpleCov::RSpec.start(
+  list_uncovered: :all,
+  list_uncovered_files: -> { SimpleCov::RSpec.described_source_files + ['lib/example_project/lexer.rb'] }
+)
+```
+
+The lambda is doing real work there, and leaving it off is a mistake worth naming.
+`SimpleCov::RSpec.start` runs before any example is defined, so calling
+`described_source_files` at that point returns an empty list and you get a report scoped
+to nothing. Any scope derived from the run has to be passed as a callable and resolved
+afterwards — which is exactly what `:described` does for you.
+
 ### Configuration block
 
 A configuration block can be given to the `start` method to further configure
@@ -314,7 +353,8 @@ variables take precedence over the values passed to `SimpleCov::RSpec.start`.
   just summarized as a count per criterion. Set to 'true', 'yes', 'on', or '1' (case
   insensitive) to show individual items.
 * **`LIST_UNCOVERED_FILES`**: Controls which files uncovered items are listed for. Set to a
-  comma-separated list of `Dir.glob` patterns, relative to `SimpleCov.root`; or to 'all'
+  comma-separated list of `Dir.glob` patterns, relative to `SimpleCov.root`; to
+  'described', for the files defining the classes the run described; or to 'all'
   (or 'false', 'no', 'off', '0', or empty) to list them for every file. Since the
   separator is a comma, a brace pattern such as `lib/{a,b}.rb` cannot be used here —
   give the alternatives separately, as `lib/a.rb,lib/b.rb`. Like `list_uncovered_files`,

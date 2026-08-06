@@ -16,11 +16,19 @@ module SimpleCov
       # LIST_UNCOVERED_FILES environment variable values that mean "every file"
       ALL_ENV_VALUES = %w[all false no off 0].freeze
 
+      # The value that means "the files defining the classes this run described"
+      #
+      # Sugar over passing a callable that does the same thing: the scope is only
+      # knowable after the run, so it resolves to one.
+      #
+      # @see SimpleCov::RSpec.described_source_files
+      DESCRIBED = :described
+
       module_function
 
       # Resolve the effective file list, applying the ENV override if present
       #
-      # @param value [nil, String, Array<String>, #call] the `list_uncovered_files:` argument
+      # @param value [nil, Symbol, String, Array<String>, #call] the `list_uncovered_files:` argument
       # @param env [Hash] the environment variables
       # @param env_var [String] the ENV var name that overrides `value`
       # @param root [String] the directory that relative patterns are resolved against
@@ -34,6 +42,7 @@ module SimpleCov
       #
       def resolve(value, env:, env_var:, root:)
         value = from_env(env.fetch(env_var)) if env.key?(env_var)
+        value = -> { ::SimpleCov::RSpec.described_source_files } if value == DESCRIBED
         value = value.call if value.respond_to?(:call)
         return nil if value.nil?
 
@@ -48,13 +57,14 @@ module SimpleCov
       # as well as before it.
       #
       # @param raw [String] the raw LIST_UNCOVERED_FILES environment variable value
-      # @return [nil, Array<String>] nil for "every file", otherwise the listed patterns
+      # @return [nil, Symbol, Array<String>] nil for "every file", {DESCRIBED}, or the listed patterns
       # @example
       #   ListUncoveredFilesOption.from_env('lib/a.rb,lib/b.rb') # => ['lib/a.rb', 'lib/b.rb']
       #
       def from_env(raw)
         stripped = raw.strip
         return nil if stripped.empty? || ALL_ENV_VALUES.include?(stripped.downcase)
+        return DESCRIBED if stripped.casecmp?(DESCRIBED.to_s)
 
         patterns = stripped.split(',').map(&:strip).reject(&:empty?)
         patterns.empty? ? nil : patterns
@@ -74,8 +84,8 @@ module SimpleCov
         when Array then validate(value)
         else
           raise ArgumentError,
-                'list_uncovered_files must be nil, a String, an Array of Strings, or a callable returning one ' \
-                "of those; got #{value.inspect}"
+                'list_uncovered_files must be nil, :described, a String, an Array of Strings, or a callable ' \
+                "returning one of those; got #{value.inspect}"
         end
       end
 

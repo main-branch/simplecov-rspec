@@ -202,11 +202,25 @@ RSpec.describe SimpleCov::RSpec do
         expect(subject.list_uncovered_files).to eq([File.join(root, 'lib/b.rb')])
       end
 
+      it 'resolves :described to the files defining the classes the run described' do
+        allow(described_class).to receive(:described_source_files).and_return(['/project/lib/parser.rb'])
+        subject = described_class.new(list_uncovered_files: :described, env: {})
+        expect(subject.list_uncovered_files).to eq(['/project/lib/parser.rb'])
+      end
+
+      it 'resolves :described after the run, not at start' do
+        allow(described_class).to receive(:described_source_files).and_return([])
+        subject = described_class.new(list_uncovered_files: :described, env: {})
+        expect(described_class).not_to have_received(:described_source_files)
+        subject.list_uncovered_files
+        expect(described_class).to have_received(:described_source_files)
+      end
+
       it 'raises ArgumentError when given something other than a String or Array' do
         expect { described_class.new(list_uncovered_files: :lib, env: {}).list_uncovered_files }.to raise_error(
           ArgumentError,
-          'list_uncovered_files must be nil, a String, an Array of Strings, or a callable returning one of ' \
-          'those; got :lib'
+          'list_uncovered_files must be nil, :described, a String, an Array of Strings, or a callable ' \
+          'returning one of those; got :lib'
         )
       end
 
@@ -324,6 +338,14 @@ RSpec.describe SimpleCov::RSpec do
         it 'treats a value with no patterns as every file' do
           subject = described_class.new(list_uncovered_files: 'lib/a.rb', env: { 'LIST_UNCOVERED_FILES' => ', ,' })
           expect(subject.list_uncovered_files).to be_nil
+        end
+
+        %w[described DESCRIBED].each do |value|
+          it "treats #{value.inspect} as the files defining the described classes" do
+            allow(described_class).to receive(:described_source_files).and_return(['/project/lib/parser.rb'])
+            subject = described_class.new(list_uncovered_files: 'lib/a.rb', env: { 'LIST_UNCOVERED_FILES' => value })
+            expect(subject.list_uncovered_files).to eq(['/project/lib/parser.rb'])
+          end
         end
       end
 
