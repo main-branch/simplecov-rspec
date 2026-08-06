@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'simplecov'
+require_relative 'simplecov-rspec/list_uncovered_files_option'
 require_relative 'simplecov-rspec/list_uncovered_option'
 require_relative 'simplecov-rspec/uncovered_report'
 
@@ -100,6 +101,26 @@ module SimpleCov
     #     Read from the `LIST_UNCOVERED_DETAIL` environment variable if set: `true`,
     #     `yes`, `on`, or `1` (case-insensitive) shows details; anything else summarizes.
     #
+    #   @param list_uncovered_files [nil, String, Array<String>, #call] which files to list
+    #     uncovered items for (default: nil)
+    #
+    #     `nil` reports on every file in the result. A String or Array of Strings names
+    #     the files to report on, as `Dir.glob` patterns resolved against `SimpleCov.root`.
+    #     A callable returning either is resolved after the run rather than at `start`,
+    #     which is what a caller scoping the report to the code under test needs: `start`
+    #     runs before any example is defined.
+    #
+    #     This narrows only the uncovered listing. Coverage is still measured, enforced,
+    #     and formatted for the whole project, so the percentage and the HTML report mean
+    #     the same thing whether or not this is set.
+    #
+    #     A scoped report names how many of the result's files it covered, and says so
+    #     explicitly when they are fully covered or when nothing matched.
+    #
+    #     Read from the `LIST_UNCOVERED_FILES` environment variable if set: a
+    #     comma-separated list of patterns, or `all` (or `false`, `no`, `off`, `0`, or
+    #     empty) for every file.
+    #
     #   @param start_config_block [Proc] a configuration block to pass to `SimpleCov.start` (default: nil)
     #
     #   @param rspec_dry_run [Boolean] whether the rspec run is a dry run
@@ -132,6 +153,15 @@ module SimpleCov
     #     # OR use an environment variable to override the default
     #     LIST_UNCOVERED=all rspec
     #
+    #   @example List uncovered items for one file only
+    #     SimpleCov::RSpec.start(list_uncovered: :all, list_uncovered_files: 'lib/example_project/parser.rb')
+    #
+    #     # OR use an environment variable to override the default
+    #     LIST_UNCOVERED_FILES=lib/example_project/parser.rb rspec
+    #
+    #   @example Scope the listing to the classes the run actually described
+    #     SimpleCov::RSpec.start(list_uncovered: :all, list_uncovered_files: -> { described_source_files })
+    #
     def self.start(...) = new(...).send(:start)
 
     # Environment variable to override minimum_coverage[:line]
@@ -163,6 +193,11 @@ module SimpleCov
     # @api private
     # @private
     LIST_UNCOVERED_DETAIL = 'LIST_UNCOVERED_DETAIL'
+
+    # Environment variable to override list_uncovered_files
+    # @api private
+    # @private
+    LIST_UNCOVERED_FILES = 'LIST_UNCOVERED_FILES'
 
     # Maps a coverage criterion to the environment variable that overrides its threshold
     # @api private
@@ -245,6 +280,23 @@ module SimpleCov
       @list_uncovered_criteria ||= ListUncoveredOption.resolve(@list_uncovered, env: env, env_var: LIST_UNCOVERED)
     end
 
+    # The files to list uncovered items for, or nil for every file in the result
+    #
+    # Resolved from the `at_exit` hook rather than at `start`: `start` runs before any
+    # example is defined, so a caller scoping the report to the code under test cannot
+    # know which files those are until the run is over.
+    #
+    # @return [Array<String>, nil]
+    #
+    # @api private
+    # @private
+    #
+    def list_uncovered_files
+      ListUncoveredFilesOption.resolve(
+        @list_uncovered_files, env: env, env_var: LIST_UNCOVERED_FILES, root: simplecov_module.root
+      )
+    end
+
     # Whether to list individual uncovered items, or just a count per criterion
     #
     # @return [Boolean]
@@ -281,6 +333,7 @@ module SimpleCov
       fail_on_low_coverage: nil,
       list_uncovered: nil,
       list_uncovered_detail: nil,
+      list_uncovered_files: nil,
       rspec_dry_run: ::RSpec.configuration.dry_run?,
       env: ENV,
       simplecov_module: ::SimpleCov,
@@ -290,6 +343,7 @@ module SimpleCov
       @fail_on_low_coverage = fail_on_low_coverage
       @list_uncovered = list_uncovered
       @list_uncovered_detail = list_uncovered_detail
+      @list_uncovered_files = list_uncovered_files
       @start_config_block = start_config_block
       @rspec_dry_run = rspec_dry_run
       @env = env
@@ -340,10 +394,8 @@ module SimpleCov
       return if list_uncovered_criteria.empty?
 
       report = UncoveredReport.new(
-        result: simplecov_module.result,
-        criteria: list_uncovered_criteria,
-        detail: list_uncovered_detail?,
-        detail_env_var: LIST_UNCOVERED_DETAIL
+        result: simplecov_module.result, criteria: list_uncovered_criteria, detail: list_uncovered_detail?,
+        detail_env_var: LIST_UNCOVERED_DETAIL, files: list_uncovered_files
       ).to_s
       return if report.empty?
 

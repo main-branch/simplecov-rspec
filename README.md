@@ -10,34 +10,66 @@ Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-%23FE5196?log
 
 `simplecov-rspec` is a Ruby gem that integrates SimpleCov with RSpec. SimpleCov
 (`>= 1.0`) already enforces `minimum_coverage` for line, branch, and method coverage
-and fails the build when a threshold is missed. This gem layers three things on top
+and fails the build when a threshold is missed. This gem layers four things on top
 that SimpleCov doesn't do on its own:
 
 1. Suppresses coverage failures when RSpec is run in dry-run mode (e.g. from an IDE).
 2. Lists (or summarizes) the individual uncovered lines, branches, and methods.
-3. Lets all of the above be overridden from the environment, for CI.
+3. Scopes that listing to the files you name.
+4. Lets all of the above be overridden from the environment, for CI.
 
 When `simplecov-rspec` is used, RSpec will report an error if the percent of test
 coverage falls below a defined threshold:
 
 ```text
-Coverage report generated for RSpec to /Projects/example_project/coverage. 284 / 286 LOC (99.3%) covered.
-
-Line coverage (99.3%) is below the expected minimum coverage (100.00%).
+Coverage report generated for RSpec to coverage/index.html
+Line coverage: 284 / 286 (99.30%)
+Line coverage (99.30%) is below the expected minimum coverage (100.00%).
+  Lowest-coverage files (line):
+     99.30%  lib/example_project.rb
+SimpleCov failed with exit 2 due to a coverage related error
 ```
 
-If configured to list the items that were not covered by tests, RSpec will additionally output:
+All of that comes from SimpleCov itself. If configured to list the items that were not
+covered by tests, this gem adds its own listing between SimpleCov's summary and its
+failure message:
 
 ```text
+Coverage report generated for RSpec to coverage/index.html
+Line coverage: 284 / 286 (99.30%)
+
 2 lines are not covered by tests:
   ./lib/example_project.rb:74
   ./lib/example_project.rb:75
+Line coverage (99.30%) is below the expected minimum coverage (100.00%).
+```
+
+Scoping the listing to particular files changes its shape again. It is marked off with a
+header saying how much of the result it covers, and each criterion reports what the
+scoped files cover directly above what they miss — see [Scoping the listing to specific
+files](#scoping-the-listing-to-specific-files):
+
+```text
+Coverage report generated for RSpec to coverage/index.html
+Line coverage: 284 / 286 (99.30%)
+Branch coverage: 138 / 150 (92.00%)
+
+-- Reporting uncovered lines and branches for 1 of 12 files --
+
+Scoped line coverage: 73 / 74 (98.64%)
+1 line is not covered by tests:
+  ./lib/example_project/parser.rb:74
+
+Scoped branch coverage: 11 / 12 (91.66%)
+1 branch is not covered by tests:
+  ./lib/example_project/parser.rb:82 (then branch)
 ```
 
 - [Installation](#installation)
 - [Getting started](#getting-started)
   - [Basic setup](#basic-setup)
   - [Listing uncovered items](#listing-uncovered-items)
+  - [Scoping the listing to specific files](#scoping-the-listing-to-specific-files)
   - [Configuration block](#configuration-block)
   - [Configuration from environment variables](#configuration-from-environment-variables)
 - [Development](#development)
@@ -111,7 +143,8 @@ SimpleCov::RSpec.start(
     minimum_coverage: { line: 100 },
     fail_on_low_coverage: true,
     list_uncovered: false,
-    list_uncovered_detail: true
+    list_uncovered_detail: true,
+    list_uncovered_files: nil
 )
 ```
 
@@ -142,12 +175,19 @@ SimpleCov::RSpec.start(minimum_coverage: { line: 100, branch: 90 }, list_uncover
 ```
 
 ```text
-1 line is not covered by tests:
+2 lines are not covered by tests:
   ./lib/example_project.rb:74
+  ./lib/example_project.rb:75
 
 1 branch is not covered by tests:
   ./lib/example_project.rb:82 (else branch)
+
+1 method is not covered by tests:
+  ./lib/example_project.rb:96 ExampleProject#unused
 ```
+
+A criterion with nothing uncovered is left out entirely, so `:all` prints fewer sections
+than this when there is less to say.
 
 For a quieter CI log, set `list_uncovered_detail: false` to print only the count per
 criterion, along with a hint on how to see the details:
@@ -159,8 +199,85 @@ SimpleCov::RSpec.start(list_uncovered: :all, list_uncovered_detail: false)
 ```text
 2 lines are not covered by tests.
 1 branch is not covered by tests.
+1 method is not covered by tests.
 
-Run with LIST_UNCOVERED_DETAIL=true to see the uncovered lines and branches.
+Run with LIST_UNCOVERED_DETAIL=true to see the uncovered lines, branches and methods.
+```
+
+### Scoping the listing to specific files
+
+By default the uncovered listing covers every file SimpleCov tracked. On a focused run
+— one spec file, or one directory — that listing is mostly noise: `spec_helper`
+requires the whole project, so nearly all of it is legitimately unexercised.
+
+`list_uncovered_files` (available since version 1.1) narrows the listing to the files
+you care about, given as `Dir.glob` patterns resolved against `SimpleCov.root`. An
+absolute path is used as given:
+
+```ruby
+SimpleCov::RSpec.start(list_uncovered: :all, list_uncovered_files: 'lib/example_project/parser.rb')
+```
+
+This option scopes the listing that `list_uncovered` asks for; it does not ask for one.
+`list_uncovered` defaults to `false`, which lists nothing, so setting only
+`list_uncovered_files` produces no output at all. Set both.
+
+```text
+-- Reporting uncovered lines, branches and methods for 1 of 218 files --
+
+Scoped line coverage: 73 / 74 (98.64%)
+1 line is not covered by tests:
+  ./lib/example_project/parser.rb:74
+
+Scoped branch coverage: 12 / 12 (100.00%)
+Scoped method coverage: 8 / 8 (100.00%)
+```
+
+Each criterion reports what the scoped files cover directly above what they miss, so a
+count like "1 line is not covered" arrives with the denominator that makes it readable,
+and a blank line always means "next criterion". These are deliberately labelled
+differently from SimpleCov's own project-wide summary, and the report is marked off with
+a header, because SimpleCov prints that summary a few lines earlier on the same stream
+while counting different things.
+
+This narrows **only the listing**. Coverage is still measured, enforced, and formatted
+for the whole project, so the reported percentage and the HTML report mean the same
+thing whether or not this option is set. There is one definition of "the coverage
+number", and this option does not change it.
+
+A scoped report always prints something, and always says how much of the result it
+covered, so it can never be mistaken for a clean run of the whole suite:
+
+```text
+-- Reporting uncovered lines, branches and methods for 1 of 218 files --
+
+Scoped line coverage: 74 / 74 (100.00%)
+Scoped branch coverage: 12 / 12 (100.00%)
+Scoped method coverage: 8 / 8 (100.00%)
+
+No uncovered lines, branches and methods in this file.
+```
+
+When it comes up empty, it says which of the three reasons applies, since only one of
+them means you mistyped a pattern:
+
+```text
+-- Reporting uncovered lines, branches and methods for 0 of 218 files --
+
+No files matched, so no coverage was reported.
+```
+
+```text
+-- Reporting uncovered lines, branches and methods for 0 of 218 files --
+
+1 file matched, but it is not in the coverage result. It may not have been loaded by
+this run, or may be excluded by a SimpleCov filter.
+```
+
+```text
+-- Reporting uncovered lines, branches and methods for 0 of 218 files --
+
+No files were requested, so no coverage was reported.
 ```
 
 ### Configuration block
@@ -196,6 +313,13 @@ variables take precedence over the values passed to `SimpleCov::RSpec.start`.
 * **`LIST_UNCOVERED_DETAIL`**: Controls whether uncovered items are listed individually, or
   just summarized as a count per criterion. Set to 'true', 'yes', 'on', or '1' (case
   insensitive) to show individual items.
+* **`LIST_UNCOVERED_FILES`**: Controls which files uncovered items are listed for. Set to a
+  comma-separated list of `Dir.glob` patterns, relative to `SimpleCov.root`; or to 'all'
+  (or 'false', 'no', 'off', '0', or empty) to list them for every file. Since the
+  separator is a comma, a brace pattern such as `lib/{a,b}.rb` cannot be used here —
+  give the alternatives separately, as `lib/a.rb,lib/b.rb`. Like `list_uncovered_files`,
+  this scopes the listing rather than asking for one: it has no effect unless
+  `LIST_UNCOVERED` (or `list_uncovered:`) names at least one criterion.
 
 For example, here is a bash script to run tests in an infinite loop while writing
 test output to `fail.txt`:

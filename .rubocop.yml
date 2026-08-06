@@ -6,6 +6,12 @@ AllCops:
   # your project supports:
   TargetRubyVersion: 3.2
 
+Metrics/ClassLength:
+  # SimpleCov::RSpec is a configuration surface: every option it accepts costs a reader
+  # method, an ENV-name constant, and an ivar. The default 100 is a smell threshold for
+  # classes that do work, not for one that mostly declares options.
+  Max: 120
+
 Style/StderrPuts:
   Enabled: false
 

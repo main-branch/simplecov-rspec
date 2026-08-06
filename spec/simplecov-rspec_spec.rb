@@ -9,6 +9,7 @@ RSpec.describe SimpleCov::RSpec do
           fail_on_low_coverage?: true,
           list_uncovered_criteria: [],
           list_uncovered_detail?: true,
+          list_uncovered_files: nil,
           rspec_dry_run?: RSpec.configuration.dry_run?,
           simplecov_module: SimpleCov,
           env: ENV,
@@ -73,6 +74,7 @@ RSpec.describe SimpleCov::RSpec do
             fail_on_low_coverage: false,
             list_uncovered: :all,
             list_uncovered_detail: false,
+            list_uncovered_files: 'lib/simplecov-rspec.rb',
             env: {}
           }
         end
@@ -83,6 +85,7 @@ RSpec.describe SimpleCov::RSpec do
             fail_on_low_coverage?: false,
             list_uncovered_criteria: %i[line branch method],
             list_uncovered_detail?: false,
+            list_uncovered_files: [File.join(SimpleCov.root, 'lib/simplecov-rspec.rb')],
             env: {}
           )
         end
@@ -141,6 +144,75 @@ RSpec.describe SimpleCov::RSpec do
       it 'raises ArgumentError for an unsupported value' do
         expect { described_class.new(list_uncovered: true).list_uncovered_criteria }
           .to raise_error(ArgumentError, /list_uncovered must be/)
+      end
+    end
+
+    describe '#list_uncovered_files' do
+      let(:root) { SimpleCov.root }
+
+      it 'returns nil by default, meaning every file in the result' do
+        expect(described_class.new(env: {}).list_uncovered_files).to be_nil
+      end
+
+      it 'returns nil when explicitly given nil' do
+        expect(described_class.new(list_uncovered_files: nil, env: {}).list_uncovered_files).to be_nil
+      end
+
+      it 'wraps a single String in an Array of absolute paths' do
+        subject = described_class.new(list_uncovered_files: 'lib/no_such_file.rb', env: {})
+        expect(subject.list_uncovered_files).to eq([File.join(root, 'lib/no_such_file.rb')])
+      end
+
+      it 'resolves an Array of patterns, without duplicates' do
+        subject = described_class.new(list_uncovered_files: ['lib/a.rb', 'lib/b.rb', 'lib/a.rb'], env: {})
+        expect(subject.list_uncovered_files).to eq([File.join(root, 'lib/a.rb'), File.join(root, 'lib/b.rb')])
+      end
+
+      it 'leaves an absolute pattern alone' do
+        subject = described_class.new(list_uncovered_files: '/somewhere/else/a.rb', env: {})
+        expect(subject.list_uncovered_files).to eq(['/somewhere/else/a.rb'])
+      end
+
+      it 'expands a glob that matches files on disk' do
+        subject = described_class.new(list_uncovered_files: 'lib/simplecov-rspec/*_option.rb', env: {})
+        expect(subject.list_uncovered_files).to contain_exactly(
+          File.join(root, 'lib/simplecov-rspec/list_uncovered_option.rb'),
+          File.join(root, 'lib/simplecov-rspec/list_uncovered_files_option.rb')
+        )
+      end
+
+      it 'keeps a pattern that matches nothing as a literal path' do
+        subject = described_class.new(list_uncovered_files: 'lib/**/no_such_file.rb', env: {})
+        expect(subject.list_uncovered_files).to eq([File.join(root, 'lib/**/no_such_file.rb')])
+      end
+
+      it 'calls a callable, and resolves what it returns' do
+        subject = described_class.new(list_uncovered_files: -> { 'lib/a.rb' }, env: {})
+        expect(subject.list_uncovered_files).to eq([File.join(root, 'lib/a.rb')])
+      end
+
+      it 'returns nil when a callable returns nil' do
+        expect(described_class.new(list_uncovered_files: -> {}, env: {}).list_uncovered_files).to be_nil
+      end
+
+      it 'resolves the callable on each call, not once at start' do
+        values = ['lib/a.rb', 'lib/b.rb']
+        subject = described_class.new(list_uncovered_files: -> { values.shift }, env: {})
+        expect(subject.list_uncovered_files).to eq([File.join(root, 'lib/a.rb')])
+        expect(subject.list_uncovered_files).to eq([File.join(root, 'lib/b.rb')])
+      end
+
+      it 'raises ArgumentError when given something other than a String or Array' do
+        expect { described_class.new(list_uncovered_files: :lib, env: {}).list_uncovered_files }.to raise_error(
+          ArgumentError,
+          'list_uncovered_files must be nil, a String, an Array of Strings, or a callable returning one of ' \
+          'those; got :lib'
+        )
+      end
+
+      it 'raises ArgumentError when an Array entry is not a String' do
+        expect { described_class.new(list_uncovered_files: ['lib/a.rb', :b], env: {}).list_uncovered_files }
+          .to raise_error(ArgumentError, 'list_uncovered_files entries must be Strings; got [:b]')
       end
     end
 
@@ -211,6 +283,47 @@ RSpec.describe SimpleCov::RSpec do
             subject = described_class.new(env: { 'LIST_UNCOVERED' => value })
             expect(subject).to have_attributes(list_uncovered_criteria: [])
           end
+        end
+      end
+
+      context 'when LIST_UNCOVERED_FILES is set' do
+        let(:root) { SimpleCov.root }
+
+        it 'overrides the default list_uncovered_files' do
+          subject = described_class.new(env: { 'LIST_UNCOVERED_FILES' => 'lib/a.rb' })
+          expect(subject.list_uncovered_files).to eq([File.join(root, 'lib/a.rb')])
+        end
+
+        it 'overrides the given list_uncovered_files' do
+          subject = described_class.new(list_uncovered_files: 'lib/a.rb', env: { 'LIST_UNCOVERED_FILES' => 'lib/b.rb' })
+          expect(subject.list_uncovered_files).to eq([File.join(root, 'lib/b.rb')])
+        end
+
+        it 'accepts a comma-separated list of patterns, ignoring surrounding whitespace' do
+          subject = described_class.new(env: { 'LIST_UNCOVERED_FILES' => ' lib/a.rb , lib/b.rb ' })
+          expect(subject.list_uncovered_files).to eq([File.join(root, 'lib/a.rb'), File.join(root, 'lib/b.rb')])
+        end
+
+        it 'ignores empty entries in the list' do
+          subject = described_class.new(env: { 'LIST_UNCOVERED_FILES' => 'lib/a.rb,,lib/b.rb' })
+          expect(subject.list_uncovered_files).to eq([File.join(root, 'lib/a.rb'), File.join(root, 'lib/b.rb')])
+        end
+
+        %w[all false no off 0 ALL].each do |value|
+          it "treats #{value.inspect} as every file" do
+            subject = described_class.new(list_uncovered_files: 'lib/a.rb', env: { 'LIST_UNCOVERED_FILES' => value })
+            expect(subject.list_uncovered_files).to be_nil
+          end
+        end
+
+        it 'treats an empty value as every file' do
+          subject = described_class.new(list_uncovered_files: 'lib/a.rb', env: { 'LIST_UNCOVERED_FILES' => '  ' })
+          expect(subject.list_uncovered_files).to be_nil
+        end
+
+        it 'treats a value with no patterns as every file' do
+          subject = described_class.new(list_uncovered_files: 'lib/a.rb', env: { 'LIST_UNCOVERED_FILES' => ', ,' })
+          expect(subject.list_uncovered_files).to be_nil
         end
       end
 
